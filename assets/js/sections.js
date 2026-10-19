@@ -33,7 +33,7 @@
       h('p', { class: 'about__lead reveal', text: A.lead }),
       h('div', { class: 'about__blocks' }, blocks)
     ));
-    root.appendChild(h('aside', { class: 'about__side', 'aria-label': 'At a glance' }, photo, coords));
+    root.appendChild(h('div', { class: 'about__side', role: 'group', 'aria-label': 'At a glance' }, photo, coords));
   };
 
   RJY.renderEducation = function (root) {
@@ -144,74 +144,233 @@
   };
 
   /* ---------------- Contact ---------------- */
-  // The page ends where it began: the full painting. Each way to reach me is pinned to one of the
-  // painted stars (desktop), and listed under the text for everyone.
+  // The page ends where it began: the full painting. Five painted stars are the social links, joined by
+  // a gold constellation line (on narrow screens the same constellation is drawn under the text).
+  // Email and phone numbers sit with the text.
+  function firstSegment(url) {
+    try { return decodeURIComponent(new URL(url).pathname.split('/').filter(Boolean)[0] || ''); } catch (e) { return ''; }
+  }
+  var NETWORKS = [
+    // star: the painted star (index in RJY.Painting.LIGHTS) the link lives on, in constellation order
+    { key: 'instagram', label: 'Instagram', star: 9, handle: function (u) { var s = firstSegment(u); return s ? '@' + s : ''; } },
+    { key: 'x', label: 'X', star: 8, handle: function (u) { var s = firstSegment(u); return s ? '@' + s : ''; } },
+    { key: 'facebook', label: 'Facebook', star: 5, handle: function (u) { return firstSegment(u); } },
+    { key: 'github', label: 'GitHub', star: 7, handle: function (u) { var s = firstSegment(u); return s ? '@' + s : ''; } },
+    { key: 'linkedin', label: 'LinkedIn', star: 10, handle: function () { return SITE.profile.legalName; } }
+  ];
+
   RJY.renderContact = function (root) {
     var L = SITE.links, P = SITE.profile;
-    var items = [];
-    if (has(L.email)) items.push({ key: 'email', label: 'Email', sub: L.email, href: 'mailto:' + L.email, star: 5 });
-    items.push({ key: 'linkedin', label: 'LinkedIn', sub: 'Edwin Ruibin Jin Yao', href: L.linkedin, ext: true, star: 10, side: 'left' });
-    items.push({ key: 'github', label: 'GitHub', sub: '@RuibinRay', href: L.github, ext: true, star: 6 });
-    if (has(L.resume)) items.push({ key: 'resume', label: 'Résumé', sub: 'PDF', href: L.resume, ext: true, star: 8 });
-    var spare = [7, 0, 9];
-    (L.other || []).forEach(function (o, i) { items.push({ key: 'other' + i, label: o.label, sub: '', href: o.url, ext: true, star: spare[i] }); });
+    var items = NETWORKS.filter(function (n) { return has(L[n.key]); }).map(function (n) {
+      return { key: n.key, label: n.label, star: n.star, href: L[n.key], handle: n.handle(L[n.key]) };
+    });
+    (L.other || []).forEach(function (o, i) {
+      if (has(o.url)) items.push({ key: 'other' + i, label: o.label, star: [6, 4, 0][i], href: o.url, handle: '' });
+    });
+    function accName(it) { return it.label + (it.handle ? ', ' + it.handle : '') + ' (opens in a new tab)'; }
 
-    var list = h('ul', { class: 'clinks' }, items.map(function (it) {
-      return h('li', null, h('a', { href: it.href, target: it.ext ? '_blank' : null, rel: it.ext ? 'noopener' : null, 'data-link': it.key },
-        h('span', { class: 'clinks__star', html: RJY.starIcon() }),
-        h('span', { class: 'clinks__label', text: it.label }),
-        has(it.sub) ? h('span', { class: 'clinks__sub', text: it.sub }) : null));
+    // email and phones, beside the words
+    var phones = (L.phones || []).filter(function (p) { return has(p.number); });
+    var rows = [];
+    if (has(L.email)) {
+      var copy = navigator.clipboard ? h('button', { class: 'cdetails__copy', type: 'button', text: 'Copy', onclick: function () {
+        var b = this;
+        navigator.clipboard.writeText(L.email).then(function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); }, function () {});
+      } }) : null;
+      rows.push(h('div', null, h('dt', { text: 'Email' }), h('dd', null, h('a', { href: 'mailto:' + L.email, text: L.email }), copy)));
+    }
+    if (phones.length) {
+      rows.push(h('div', null, h('dt', { text: 'Phone' }), phones.map(function (p) {
+        return h('dd', null, h('a', { href: 'tel:' + p.number.replace(/[^\d+]/g, ''), text: p.number }), has(p.label) ? h('span', { class: 'cdetails__where', text: p.label }) : null);
+      })));
+    }
+    var missingPhones = (L.phones || []).filter(function (p) { return !has(p.number); });
+
+    // the constellation drawn in the page (phones, tablets, or when the painted stars are covered)
+    var inline = h('ol', { class: 'cconst', 'aria-label': 'Find me online' }, items.map(function (it, i) {
+      return h('li', null, h('a', { href: it.href, target: '_blank', rel: 'noopener', 'aria-label': accName(it), 'data-link': it.key, 'data-star': it.star },
+        h('span', { class: 'cconst__star', html: RJY.starIcon() }),
+        h('span', { class: 'cconst__name', text: it.label }),
+        it.handle ? h('span', { class: 'cconst__handle', text: it.handle }) : null));
     }));
-    root.appendChild(h('div', { class: 'contact__words' },
+    var inlineSvg = RJY.s('svg', { class: 'cconst__lines', 'aria-hidden': 'true' });
+    var inlineWrap = h('div', { class: 'cconst-wrap' }, inlineSvg, inline);
+
+    var words = h('div', { class: 'contact__words' },
       h('p', { class: 'sec__kicker', 'data-kicker': '' }, 'Contact'),
       h('h2', { class: 'contact__title', id: 'contact-title', text: 'Under the Same Sky' }),
       h('p', { class: 'contact__text', text: 'If you work in energy, international markets or finance and think I could help, I’d like to hear from you.' }),
       h('p', { class: 'contact__sub', text: 'Based in ' + P.basedIn + ', ' + P.relocation.charAt(0).toLowerCase() + P.relocation.slice(1, -1) + '. I work in English, Spanish and Mandarin.' }),
-      list,
-      !has(L.email) ? RJY.ph('your public email — links.email in data/site.js (it becomes a star in the sky)') : null,
-      !has(L.resume) ? RJY.ph('a résumé PDF — put it in assets/docs/ and set links.resume') : null));
+      rows.length ? h('dl', { class: 'cdetails' }, rows) : null,
+      missingPhones.length ? RJY.ph('your ' + missingPhones.map(function (p) { return p.label; }).join(' and ') + ' phone number — links.phones in data/site.js') : null,
+      !has(L.email) ? RJY.ph('your public email — links.email in data/site.js') : null,
+      inlineWrap);
+    root.appendChild(words);
 
-    // Fixed overlay of the same links, pinned to painted stars
-    var layer = h('div', { class: 'skylinks', 'aria-hidden': 'true' });
-    var svg = RJY.s('svg', { class: 'skylinks__lines' });
+    // the same links pinned to the painted stars (desktop): fixed over the painting
+    var layer = h('div', { class: 'skylinks', role: 'group', 'aria-label': 'Find me online' });
+    var svg = RJY.s('svg', { class: 'skylinks__lines', 'aria-hidden': 'true' });
     layer.appendChild(svg);
-    var markers = items.filter(function (it) { return it.star != null; }).map(function (it) {
-      var m = h('a', { class: 'skylink' + (it.side === 'left' ? ' skylink--left' : ''), href: it.href, tabindex: '-1', target: it.ext ? '_blank' : null, rel: it.ext ? 'noopener' : null, 'data-link': it.key },
-        h('span', { class: 'skylink__ring' }), h('span', { class: 'skylink__label', text: it.label }));
-      m._star = RJY.Painting.META.stars[it.star];
-      layer.appendChild(m);
-      return m;
+    var markers = items.map(function (it) {
+      var lab = h('span', { class: 'skylink__label' }, h('span', { class: 'skylink__name', text: it.label }), it.handle ? h('span', { class: 'skylink__handle', text: it.handle }) : null);
+      var a = h('a', { class: 'skylink', href: it.href, target: '_blank', rel: 'noopener', 'aria-label': accName(it), 'data-link': it.key, 'data-star': it.star }, lab);
+      a._it = it; a._lab = lab;
+      layer.appendChild(a);
+      return a;
     });
-    document.body.appendChild(layer);
-    // hovering either the list or the sky marker lights both
-    function pair(key, on) { document.querySelectorAll('[data-link="' + key + '"]').forEach(function (el) { el.classList.toggle('is-lit', on); }); }
-    document.querySelectorAll('[data-link]').forEach(function (el) {
+    root.appendChild(layer);
+
+    // pointing at a link wakes its star (in the painting) and lights its lines
+    function wake(key, on) {
+      document.querySelectorAll('[data-link="' + key + '"]').forEach(function (el) { el.classList.toggle('is-lit', on); });
+      svg.querySelectorAll('[data-a="' + key + '"],[data-b="' + key + '"]').forEach(function (el) { el.classList.toggle('is-hot', on); });
+      inlineSvg.querySelectorAll('[data-a="' + key + '"],[data-b="' + key + '"]').forEach(function (el) { el.classList.toggle('is-hot', on); });
+      var it = items.filter(function (x) { return x.key === key; })[0];
+      if (it && RJY.starHover && skyMode && shown) RJY.starHover(it.star, on);
+    }
+    root.querySelectorAll('[data-link]').forEach(function (el) {
       var k = el.getAttribute('data-link');
-      el.addEventListener('mouseenter', function () { pair(k, true); });
-      el.addEventListener('mouseleave', function () { pair(k, false); });
-      el.addEventListener('focus', function () { pair(k, true); });
-      el.addEventListener('blur', function () { pair(k, false); });
+      el.addEventListener('pointerenter', function () { wake(k, true); });
+      el.addEventListener('pointerleave', function () { if (document.activeElement !== el) wake(k, false); });
+      el.addEventListener('focus', function () { wake(k, true); });
+      el.addEventListener('blur', function () { wake(k, false); });
+    });
+    // keyboard: arriving on the links scrolls all the way down so the painted stars line up
+    layer.addEventListener('focusin', function () {
+      var max = document.documentElement.scrollHeight - window.innerHeight;
+      if (window.pageYOffset < max - 2) RJY.scrollNow(max);
     });
 
-    var words = root.querySelector('.contact__words');
-    RJY.skyLinks = {
-      update: function (progress, cam) {
-        var show = progress > 0.9 && window.innerWidth > 760;
-        layer.classList.toggle('is-visible', show);
-        if (!show) return;
-        var w = window.innerWidth, hh = window.innerHeight;
-        var m = RJY.Painting.viewMap(w, hh, RJY.Painting.focalFor(w, hh), cam);
-        var box = words.getBoundingClientRect(), pts = [];
-        markers.forEach(function (mk) {
-          var x = m[0] + mk._star.x * m[2], y = m[1] + mk._star.y * m[3];
-          var hidden = x < 40 || x > w - 40 || y < 90 || y > hh - 60 || (x > box.left - 60 && x < box.right + 20 && y > box.top - 30 && y < box.bottom + 30);
-          mk.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
-          mk.style.visibility = hidden ? 'hidden' : '';
-          if (!hidden) pts.push([x, y]);
-        });
-        var d = pts.map(function (p, i) { return (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' ');
-        svg.innerHTML = pts.length > 1 ? '<path d="' + d + '"/>' : '';
+    var skyMode = false, shown = false, drawn = false, lastKey = '';
+    var section = root.closest('section');
+
+    function detailRects() {
+      return Array.prototype.map.call(words.querySelectorAll('.sec__kicker, .contact__title, .contact__text, .contact__sub, .cdetails, .ph'), function (e) { return e.getBoundingClientRect(); })
+        .filter(function (r) { return r.width > 0; });
+    }
+    function hits(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+    // Place every star link for a camera; returns false when a star or its label cannot be shown.
+    var why = '';   // why the links last fell back to the in-page constellation (handy when adjusting the layout)
+    function place(cam, commit, offsetY) {
+      var w = window.innerWidth, hh = window.innerHeight;
+      why = '';
+      if (w <= 760) { why = 'narrow screen'; return false; }
+      var m = RJY.Painting.viewMap(w, hh, RJY.Painting.focalFor(w, hh), cam);
+      var navH = 64, foot = 76, oy = offsetY || 0;
+      var blocks = detailRects().map(function (r) { return { x: r.left - 18, y: r.top - 14 + oy, w: r.width + 36, h: r.height + 28 }; });
+      var pts = [], ok = true;
+      markers.forEach(function (a) {
+        var s = RJY.Painting.LIGHTS[a._it.star];
+        var x = m[0] + s.x * m[2], y = m[1] + s.y * m[3];
+        var r = Math.max(20, Math.min(60, RJY.Painting.effectRadius(a._it.star) * m[2] * 0.7));
+        pts.push({ a: a, x: x, y: y, r: r });
+        if (x < 24 || x > w - 24 || y < navH + 14 || y > hh - foot) { ok = false; why = a._it.key + ': star outside the free area'; }
+        blocks.forEach(function (b) { if (hits({ x: x - r, y: y - r, w: 2 * r, h: 2 * r }, b)) { ok = false; why = a._it.key + ': star under the text'; } });
+      });
+      if (!ok) return false;
+      // labels: try right, below, left, above — the first spot that stays clear of everything
+      // (a label may sit inside its own star's invisible hit circle, but not over another star or label)
+      var placed = pts.map(function (p) { return { x: p.x - p.r, y: p.y - p.r, w: 2 * p.r, h: 2 * p.r }; });
+      pts.forEach(function (p, idx) {
+        var lw = p.a._lab.offsetWidth || 140, lh = p.a._lab.offsetHeight || 44, g = p.r * 0.75 + 10;
+        // centred spots may slide sideways to stay on screen (a star near the edge)
+        var cx = Math.max(12, Math.min(w - 12 - lw, p.x - lw / 2));
+        var spots = [
+          { side: 'right', x: p.x + g, y: p.y - lh / 2 },
+          { side: 'below', x: cx, y: p.y + g },
+          { side: 'left', x: p.x - g - lw, y: p.y - lh / 2 },
+          { side: 'above', x: cx, y: p.y - g - lh }
+        ];
+        var pick = null;
+        for (var k = 0; k < spots.length && !pick; k++) {
+          var c = spots[k], box = { x: c.x - 6, y: c.y - 6, w: lw + 12, h: lh + 12 };
+          if (c.x < 12 || c.x + lw > w - 12 || c.y < navH + 6 || c.y + lh > hh - foot + 20) continue;
+          if (blocks.some(function (b) { return hits(box, b); })) continue;
+          if (placed.some(function (b, k) { return k !== idx && hits(box, b); })) continue;
+          pick = c;
+        }
+        if (!pick) { ok = false; why = p.a._it.key + ': no room for the label'; return; }
+        placed.push({ x: pick.x, y: pick.y, w: lw, h: lh });
+        p.lx = pick.x - p.x; p.ly = pick.y - p.y; p.side = pick.side;
+      });
+      if (!ok || !commit) return ok;
+      pts.forEach(function (p) {
+        p.a.style.transform = 'translate(' + p.x.toFixed(1) + 'px,' + p.y.toFixed(1) + 'px)';
+        p.a.style.setProperty('--r', p.r.toFixed(1) + 'px');
+        p.a._lab.style.transform = 'translate(' + p.lx.toFixed(1) + 'px,' + p.ly.toFixed(1) + 'px)';
+        p.a.dataset.side = p.side;
+      });
+      // the gold constellation line: star to star, stopping short of each painted star
+      // (paths are created once and then only moved, so the drawing-in animation plays once)
+      var paths = svg.querySelectorAll('path');
+      if (paths.length !== pts.length - 1) {
+        svg.innerHTML = '';
+        for (var j = 1; j < pts.length; j++) svg.appendChild(RJY.s('path', { 'data-a': pts[j - 1].a._it.key, 'data-b': pts[j].a._it.key }));
+        paths = svg.querySelectorAll('path');
       }
+      for (var i = 1; i < pts.length; i++) {
+        var A = pts[i - 1], B = pts[i], dx = B.x - A.x, dy = B.y - A.y, len = Math.sqrt(dx * dx + dy * dy) || 1;
+        var ga = Math.min(A.r * 0.62, len / 3), gb = Math.min(B.r * 0.62, len / 3);
+        var x1 = A.x + dx / len * ga, y1 = A.y + dy / len * ga, x2 = B.x - dx / len * gb, y2 = B.y - dy / len * gb;
+        var mx = (x1 + x2) / 2 + dy * 0.06, my = (y1 + y2) / 2 - dx * 0.06;
+        paths[i - 1].setAttribute('d', 'M' + x1.toFixed(1) + ' ' + y1.toFixed(1) + 'Q' + mx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + x2.toFixed(1) + ' ' + y2.toFixed(1));
+        paths[i - 1].style.setProperty('--len', Math.ceil(len - ga - gb + 2));
+      }
+      return true;
+    }
+
+    // Lines for the in-page constellation: through the centre of each star glyph.
+    function drawInline() {
+      if (!inline.offsetParent) return;
+      var box = inlineWrap.getBoundingClientRect(), stars = inline.querySelectorAll('.cconst__star'), d = '';
+      inlineSvg.setAttribute('viewBox', '0 0 ' + box.width.toFixed(0) + ' ' + box.height.toFixed(0));
+      var pts = Array.prototype.map.call(stars, function (s) { var r = s.getBoundingClientRect(); return [r.left + r.width / 2 - box.left, r.top + r.height / 2 - box.top]; });
+      for (var i = 1; i < pts.length; i++) {
+        var A = pts[i - 1], B = pts[i], dx = B[0] - A[0], dy = B[1] - A[1], len = Math.sqrt(dx * dx + dy * dy) || 1, g = 11;
+        d += '<path data-a="' + items[i - 1].key + '" data-b="' + items[i].key + '" d="M' + (A[0] + dx / len * g).toFixed(1) + ' ' + (A[1] + dy / len * g).toFixed(1) + 'L' + (B[0] - dx / len * g).toFixed(1) + ' ' + (B[1] - dy / len * g).toFixed(1) + '"/>';
+      }
+      inlineSvg.innerHTML = d;
+    }
+
+    // Choose: links on the painted stars, or the drawn constellation under the text.
+    function chooseMode() {
+      var w = window.innerWidth, hh = window.innerHeight;
+      var key = w + 'x' + hh;
+      var hero = RJY.Painting.heroView(w, hh);
+      // judge with the page scrolled to the very end (the final framing), whatever the scroll is now
+      var max = document.documentElement.scrollHeight - hh, offset = max - window.pageYOffset;
+      skyMode = items.length > 1 && place(hero, false, -offset);
+      section.classList.toggle('is-sky', skyMode);
+      lastKey = key;
+      drawInline();
+    }
+
+    var raf = 0;
+    function relayout() { cancelAnimationFrame(raf); raf = requestAnimationFrame(function () { chooseMode(); RJY.skyLinks.update(lastProgress, lastCam); }); }
+    window.addEventListener('resize', relayout);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(relayout);
+    window.addEventListener('load', relayout);
+
+    var lastProgress = 0, lastCam = null;
+    RJY.skyLinks = {
+      why: function () { return why; },
+      update: function (progress, cam) {
+        lastProgress = progress; lastCam = cam;
+        if (!lastKey) chooseMode();
+        var show = skyMode && progress > 0.9;
+        if (show) {
+          var fits = place(cam, true, 0);
+          if (!fits && progress > 0.995) { chooseMode(); show = skyMode && place(cam, true, 0); }
+        }
+        if (show !== shown) {
+          shown = show;
+          layer.classList.toggle('is-visible', show);
+          if (show && !drawn) { drawn = true; layer.classList.add('is-drawing'); setTimeout(function () { layer.classList.remove('is-drawing'); }, 3200); }
+          if (!show) items.forEach(function (it) { if (RJY.starHover) RJY.starHover(it.star, false); });
+        }
+      },
+      activeStars: function () { return shown ? items.map(function (it) { return it.star; }) : []; }
     };
   };
 

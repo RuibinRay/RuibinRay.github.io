@@ -66,6 +66,7 @@
   var A3A2 = 'ABWAWAFGAFAGOAOAIAAIALAAXALBALANDADAREAEARGARARMAMASMASATAAQATFTFATGAGAUSAUAUTATAZEAZBDIBIBELBEBENBJBFABFBGDBDBGRBGBHRBHBHSBSBIHBABLMBLBLRBYBLZBZBMUBMBOLBOBRABRBRBBBBRNBNBTNBTBWABWCAFCFCANCACHECHCHLCLCHNCNCIVCICMRCMCODCDCOGCGCOKCKCOLCOCOMKMCPVCVCRICRCUBCUCUWCWCYMKYCYPCYCZECZDEUDEDJIDJDMADMDNKDKDOMDODZADZECUECEGYEGERIERESHEHESPESESTEEETHETFINFIFJIFJFLKFKFRAFRFROFOFSMFMGABGAGBRGBGEOGEGGYGGGHAGHGINGNGMBGMGNBGWGNQGQGRCGRGRDGDGRLGLGTMGTGUMGUGUYGYHKGHKHMDHMHNDHNHRVHRHTIHTHUNHUIDNIDIMNIMINDINIOTIOIRLIEIRNIRIRQIQISLISISRILITAITJAMJMJEYJEJORJOJPNJPKAZKZKENKEKGZKGKHMKHKIRKIKNAKNKORKRKWTKWLAOLALBNLBLBRLRLBYLYLCALCLIELILKALKLSOLSLTULTLUXLULVALVMACMOMAFMFMARMAMCOMCMDAMDMDGMGMDVMVMEXMXMHLMHMKDMKMLIMLMLTMTMMRMMMNEMEMNGMNMNPMPMOZMZMRTMRMSRMSMUSMUMWIMWMYSMYNAMNANCLNCNERNENFKNFNGANGNICNINIUNUNLDNLNORNONPLNPNRUNRNZLNZOMNOMPAKPKPANPAPCNPNPERPEPHLPHPLWPWPNGPGPOLPLPRIPRPRKKPPRTPTPRYPYPSEPSPYFPFQATQAROURORUSRURWARWSAUSASDNSDSENSNSGPSGSGSGSSHNSHSLBSBSLESLSLVSVSMRSMSOMSOSPMPMSRBRSSSDSSSTPSTSURSRSVKSKSVNSISWESESWZSZSXMSXSYCSCSYRSYTCATCTCDTDTGOTGTHATHTJKTJTKMTMTLSTLTONTOTTOTTTUNTNTURTRTWNTWTZATZUGAUGUKRUAURYUYUSAUSUZBUZVATVAVCTVCVENVEVGBVGVIRVIVNMVNVUTVUWLFWFWSMWSXKXXKYEMYEZAFZAZMBZMZWEZW';
   var a3toA2 = {};
   for (var i = 0; i < A3A2.length; i += 5) a3toA2[A3A2.substr(i, 3)] = A3A2.substr(i + 3, 2);
+  RJY.allCountryCodes = Object.keys(a3toA2);
   var regionNames = null;
   try { regionNames = new Intl.DisplayNames(['en'], { type: 'region' }); } catch (e) { regionNames = null; }
   var NAME_FIX = { USA: 'United States', GBR: 'United Kingdom', KOR: 'South Korea', PRK: 'North Korea', RUS: 'Russia', CZE: 'Czechia' };
@@ -157,6 +158,8 @@
   });
   document.addEventListener('keydown', function (e) {
     if (!RJY.sheet.isOpen()) return;
+    var lbox = document.getElementById('lightbox');
+    if (lbox && !lbox.hidden) return;   // the photo viewer handles its own keys
     if (e.key === 'Escape') { e.preventDefault(); RJY.route.closeDetail(); return; }
     if (e.key === 'Tab') {
       var panel = sheet.querySelector('.sheet__panel'), f = focusables(panel);
@@ -168,22 +171,54 @@
   });
 
   /* ---------- lightbox ---------- */
-  RJY.lightbox = function (photo) {
+  // Photo viewer. Pass a list to move through it with the arrows (← → keys, or swipe on a phone).
+  RJY.lightbox = function (photo, list, index) {
     var lb = document.getElementById('lightbox');
+    list = list && list.length ? list : [photo];
+    var i = Math.max(0, index != null ? index : list.indexOf(photo));
+    var prevFocus = document.activeElement, sx = null;
+    var close = function () { lb.hidden = true; lb.innerHTML = ''; document.removeEventListener('keydown', onKey); RJY.lockScroll(false); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
+    var show = function (k) {
+      i = (k + list.length) % list.length;
+      var p = list[i];
+      img.src = p.src; img.alt = p.alt || p.caption || (p.place ? 'Photo from ' + p.place : 'Photo');
+      cap.innerHTML = '';
+      var line = [p.caption, p.place, p.date ? RJY.monthYear(p.date) : ''].filter(RJY.has).join(' — ');
+      if (line) cap.appendChild(document.createTextNode(line));
+      if (RJY.has(p.story)) cap.appendChild(h('p', { text: p.story }));
+      count.textContent = list.length > 1 ? (i + 1) + ' / ' + list.length : '';
+    };
+    var onKey = function (e) {
+      if (e.key === 'Tab') {   // keep focus inside the viewer
+        var f = lb.querySelectorAll('button'); if (!f.length) return;
+        var first = f[0], last = f[f.length - 1];
+        if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        else if (!lb.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      if (e.key === 'Escape') { e.stopPropagation(); close(); }
+      else if (e.key === 'ArrowRight' && list.length > 1) show(i + 1);
+      else if (e.key === 'ArrowLeft' && list.length > 1) show(i - 1);
+    };
     lb.innerHTML = '';
-    var close = function () { lb.hidden = true; document.removeEventListener('keydown', onKey); if (prev) prev.focus(); };
-    var onKey = function (e) { if (e.key === 'Escape') close(); };
-    var prev = document.activeElement;
-    lb.appendChild(h('figure', null,
-      h('img', { src: photo.src, alt: photo.alt || '' }),
-      h('figcaption', null,
-        [photo.caption, photo.place, photo.date ? RJY.monthYear(photo.date) : ''].filter(RJY.has).join(' — '),
-        RJY.has(photo.story) ? h('p', { text: photo.story }) : null)
-    ));
-    var btn = h('button', { class: 'sheet__close', type: 'button', 'aria-label': 'Close photo', onclick: close, html: '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>' });
+    var img = h('img', { alt: '' }), cap = h('figcaption'), count = h('span', { class: 'lightbox__count', 'aria-live': 'polite' });
+    lb.appendChild(h('figure', null, img, cap));
+    var icon = function (d) { return '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="' + d + '" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'; };
+    var btn = h('button', { class: 'sheet__close', type: 'button', 'aria-label': 'Close photo', onclick: close, html: icon('M1 1l12 12M13 1L1 13') });
     lb.appendChild(btn);
+    if (list.length > 1) {
+      lb.appendChild(h('button', { class: 'lightbox__nav lightbox__nav--prev', type: 'button', 'aria-label': 'Previous photo', onclick: function () { show(i - 1); }, html: icon('M9 2L4 7l5 5') }));
+      lb.appendChild(h('button', { class: 'lightbox__nav lightbox__nav--next', type: 'button', 'aria-label': 'Next photo', onclick: function () { show(i + 1); }, html: icon('M5 2l5 5-5 5') }));
+      lb.appendChild(count);
+    }
+    // swipe between photos (set as properties so reopening the viewer replaces them)
+    lb.ontouchstart = list.length > 1 ? function (e) { sx = e.touches[0].clientX; } : null;
+    lb.ontouchend = list.length > 1 ? function (e) { if (sx == null) return; var dx = e.changedTouches[0].clientX - sx; sx = null; if (Math.abs(dx) > 50) show(i + (dx < 0 ? 1 : -1)); } : null;
     lb.onclick = function (e) { if (e.target === lb) close(); };
+    show(i);
     lb.hidden = false;
+    RJY.lockScroll(true);
     document.addEventListener('keydown', onKey);
     btn.focus();
   };
@@ -232,11 +267,23 @@
     RJY.route.handle();
   });
 
+  /* ---------- jump without the page's smooth scrolling ---------- */
+  // Turning scroll-behavior off inline is not enough on its own: the browser may still use the
+  // smooth value it had already computed, so apply the style first and ask for an instant scroll.
+  RJY.scrollNow = function (y) {
+    var root = document.documentElement;
+    root.style.scrollBehavior = 'auto';
+    void root.offsetHeight;
+    try { window.scrollTo({ top: y, left: 0, behavior: 'instant' }); } catch (e) { window.scrollTo(0, y); }
+    root.style.scrollBehavior = '';
+  };
+
   /* ---------- smooth scroll that respects reduced motion ---------- */
   RJY.scrollTo = function (el, opts) {
     if (!el) return;
     var top = el.getBoundingClientRect().top + window.pageYOffset - (opts && opts.offset != null ? opts.offset : 64);
-    window.scrollTo({ top: Math.max(0, top), behavior: RJY.reducedMotion || (opts && opts.instant) ? 'auto' : 'smooth' });
+    if (opts && opts.instant) { RJY.scrollNow(Math.max(0, top)); return; }
+    window.scrollTo({ top: Math.max(0, top), behavior: RJY.reducedMotion ? 'auto' : 'smooth' });
   };
 
   /* ---------- formatting ---------- */

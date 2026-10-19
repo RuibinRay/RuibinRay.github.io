@@ -6,7 +6,13 @@
  *    structure tensor, so motion follows the painted curves, spirals and star halos)
  *  - the ocean has its own field: strokes drift along the foam, and swells roll toward the viewer
  *  - the person, driftwood, rocks, horizon and headland are masked out and never move
- *  - stars and the moon stay where they are painted and pulse softly
+ *  - every star (and the moon) is alive: its golden strokes swirl slowly around its centre, it
+ *    pulses at its own pace and now and then flares
+ *  - interactive stars respond to the visitor: as the cursor approaches, the star's light and the
+ *    surrounding strokes lean toward it (the star stays anchored); on hover the star itself grows
+ *    ~12%, swirls faster, breathes, glows and sends a small ripple through the sky around it
+ *  - a star can open a portal: it flares, spirals open, the view flies into it while the painted
+ *    currents stream past, and the night of the destination section appears
  *
  * No libraries. WebGL 1 so it runs nearly everywhere. Falls back to a still image (handled by main.js).
  */
@@ -25,15 +31,115 @@
     ].map(function (s) { return { x: s[0] / 1024, y: s[1] / 765, core: s[2] / 1024, halo: s[3] / 1024 }; }),
     moon: { x: 928 / 1024, y: 107 / 765, core: 72 / 1024, halo: 118 / 1024 }
   };
+  // All lights: the 11 stars, then the moon (index 11).
+  var LIGHTS = META.stars.concat([META.moon]);
+  var MOON = 11;
+  // The direction each light's strokes are painted to swirl (+1 clockwise on screen).
+  var SENSE = [1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1];
+  // Radius of the area a light's effects reach (the moon's halo is huge; use its disc instead).
+  function effectRadius(i) { return i === MOON ? LIGHTS[i].core * 1.15 : LIGHTS[i].halo; }
 
   var VERT = 'attribute vec2 aPos;void main(){gl_Position=vec4(aPos,0.0,1.0);}';
+
+  function f(n) { return (+n).toFixed(6); }
+
+  // Per-light warp: lens, ripple and magnetic pull, then remember the light whose halo we're in.
+  // the light's pull toward the pointer: (approach × direction to the pointer), worked out in JS
+  function pullVec(i) { return 'vec2(uSF[' + i + '].y,uSD[' + (i >> 2) + '].' + 'xyzw'.charAt(i & 3) + ')'; }
+
+  function warpBlock(i) {
+    var s = LIGHTS[i], E = effectRadius(i);
+    return [
+      '  {',
+      '    vec2 c=vec2(' + f(s.x) + ',' + f(s.y) + ');',
+      '    vec2 d=(uvS-c)*vec2(1.0,1.0/uAspect); float r2=dot(d,d);',
+      '    if(r2<' + f(E * E * 2.3 * 2.3) + '){',
+      '      float r=sqrt(r2); vec4 fx=uSF[' + i + ']; vec4 gx=uSG[' + i + '];',
+      '      vec2 nd=d*(1.0-(0.12*fx.x+gx.w)*ss(' + f(E * 1.3) + ',' + f(E * 0.55) + ',r));',
+      // hovered: a ripple runs through the sky around the star
+      '      if(fx.x>0.002){',
+      '        float ring=ss(' + f(E * 0.8) + ',' + f(E * 1.3) + ',r)*ss(' + f(E * 2.3) + ',' + f(E * 1.5) + ',r);',
+      '        nd-=(r>1e-5?d/r:vec2(0.0))*ring*fx.x*' + f(E * 0.05) + '*sin(r*' + f(9.0 / E) + '-uClock*3.0);',
+      '      }',
+      // the pointer is near: the strokes lean toward it, the centre stays put
+      '      vec2 pv=' + pullVec(i) + ';',
+      '      if(dot(pv,pv)>1e-7) nd-=pv*' + f(E * 0.10) + '*ss(0.0,' + f(E * 0.7) + ',r)*ss(' + f(E * 2.2) + ',' + f(E * 1.0) + ',r);',
+      '      uvS+=(nd-d)*vec2(1.0,uAspect)*skyW;',
+      '      if(r<' + f(E * 1.25) + '){zc=c;zr=' + f(E) + ';zamp=fx.w;zph=fx.z;zw=ss(' + f(E * 1.25) + ',' + f(E * 0.95) + ',r)*skyW;}',
+      '    }',
+      '  }'
+    ].join('\n');
+  }
+
+  // Per-light glow: halo + core pulse, extra light when hovered or flaring, leaning toward the cursor.
+  function glowBlock(i) {
+    var s = LIGHTS[i], cy = s.y / META.aspect;
+    if (i === MOON) {
+      return [
+        '  {',
+        '    vec4 fx=uSF[' + i + ']; vec4 gx=uSG[' + i + '];',
+        '    vec2 c=vec2(' + f(s.x) + ',' + f(cy) + ')-sp+' + pullVec(i) + '*' + f(s.core * 0.12) + ';',
+        '    float md=length(q-c);',
+        '    if(md<' + f(s.halo * 2.6) + '){',
+        '      float b=1.0+0.9*fx.x+gx.z;',
+        '      glow+=vec3(1.0,0.86,0.50)*exp(-(md*md)/' + f(s.halo * s.halo * 0.9) + ')*(0.05+0.04*gx.x)*b',
+        '           +vec3(1.0,0.80,0.40)*exp(-(md*md)/' + f(s.halo * s.halo * 2.2) + ')*(0.08*fx.x+0.06*gx.z);',
+        '      sm=max(sm,ss(' + f(s.core * 1.05) + ',' + f(s.core * 0.7) + ',md));',
+        '    }',
+        '  }'
+      ].join('\n');
+    }
+    return [
+      '  {',
+      '    vec4 fx=uSF[' + i + ']; vec4 gx=uSG[' + i + '];',
+      '    vec2 c=vec2(' + f(s.x) + ',' + f(cy) + ')-sp+' + pullVec(i) + '*' + f(s.halo * 0.14) + ';',
+      '    vec2 dv=q-c; float d2=dot(dv,dv);',
+      '    if(d2<' + f(s.halo * s.halo * 9.0) + '){',
+      '      float b=1.0+0.95*fx.x+gx.z;',
+      '      float h=exp(-d2/' + f(s.halo * s.halo * 0.55) + ');',
+      '      float k=exp(-d2/' + f(s.core * s.core * 0.9) + ');',
+      '      glow+=vec3(1.0,0.80,0.36)*h*(0.05+0.11*gx.x)*b+vec3(1.0,0.95,0.80)*k*(0.04+0.10*gx.y)*b;',
+      // the wide golden halo opens only while the star is hovered, flaring or opening a portal
+      '      float wk=0.09*fx.x+0.07*gx.z;',
+      '      if(wk>0.0002) glow+=vec3(1.0,0.76,0.36)*exp(-d2/' + f(s.halo * s.halo * 2.8) + ')*wk;',
+      '      sm=max(sm,k);',
+      '    }',
+      '  }'
+    ].join('\n');
+  }
+
+  // The lights grouped by where they sit. Each group is wrapped in one bounding-box test, so a pixel
+  // only works through the few lights whose effects could reach it (most of the sky reaches none).
+  var GROUPS = [[9, 0, 8], [1, 5, 2, 7], [10, 3], [4, 6], [MOON]];
+  function grouped(v, reach, block) {
+    return GROUPS.map(function (g) {
+      var x0 = 9, x1 = -9, y0 = 9, y1 = -9;
+      g.forEach(function (i) {
+        var s = LIGHTS[i], R = reach(i) + 0.012;   // margin for the parallax and the warps before it
+        x0 = Math.min(x0, s.x - R); x1 = Math.max(x1, s.x + R);
+        y0 = Math.min(y0, s.y - R * META.aspect); y1 = Math.max(y1, s.y + R * META.aspect);
+      });
+      return '  if(' + v + '.x>' + f(x0) + '&&' + v + '.x<' + f(x1) + '&&' + v + '.y>' + f(y0) + '&&' + v + '.y<' + f(y1) + '){\n' +
+        g.map(block).join('\n') + '\n  }';
+    }).join('\n');
+  }
+  function warpReach(i) { return effectRadius(i) * 2.3; }
+  function glowReach(i) { var s = LIGHTS[i]; return i === MOON ? s.halo * 2.6 + s.core * 0.12 : s.halo * 3.14; }
 
   var FRAG = [
     'precision highp float;',
     'uniform sampler2D uImage;uniform sampler2D uSky;uniform sampler2D uSea;uniform sampler2D uMask;uniform sampler2D uNoise;uniform sampler2D uBlur;',
     'uniform vec2 uRes;uniform vec4 uMap;uniform float uAspect;uniform float uHorizon;',
     'uniform float uFlowT;uniform float uClock;uniform float uIntro;uniform float uScroll;uniform vec2 uMouse;',
-    'uniform vec4 uStars[11];uniform vec2 uTwinkle[11];uniform vec4 uMoon;uniform float uMoonPulse;uniform vec4 uParams;uniform vec4 uFx;uniform vec4 uSpiral1;uniform vec4 uSpiral2;',
+    'uniform vec4 uParams;uniform vec4 uFx;uniform vec4 uSpiral1;uniform vec4 uSpiral2;',
+    // per light: uSF = (hover, approach, swirl phase, swirl amplitude); uSG = (halo pulse, core pulse, flare, breath)
+    // uSD packs the second component of each light's pull toward the pointer (uSF.y is the first)
+    'uniform vec4 uSF[12];uniform vec4 uSG[12];uniform vec4 uSD[3];',
+    // portal: uPortal = (centre x, centre y, progress, style); uPortal2 = (night amount, mix, sparkle, swirl sense)
+    'uniform vec4 uPortal;uniform vec4 uPortal2;',
+    'float ss(float a,float b,float x){float t=clamp((x-a)/(b-a),0.0,1.0);return t*t*(3.0-2.0*t);}',
+    'vec2 rot(vec2 v,float a){float c=cos(a),s=sin(a);return vec2(c*v.x-s*v.y,s*v.x+c*v.y);}',
+    'float hash(vec2 v){return fract(sin(dot(v,vec2(12.9898,78.233)))*43758.5453);}',
     'vec3 img(vec2 uv){return texture2D(uImage,uv).rgb;}',
     // Blend two flow phases without washing out the brushwork: keep the local contrast of the paint
     'vec3 blend2(vec3 ca,vec3 cb,float w0,vec2 uv,float shift){',
@@ -45,6 +151,22 @@
     'void main(){',
     '  vec2 p=vec2(gl_FragCoord.x,uRes.y-gl_FragCoord.y);',
     '  vec2 uv=(p-uMap.xy)/uMap.zw;',
+    // ---- portal: fly into the chosen star ----
+    '  vec2 pc=uPortal.xy; float PP=uPortal.z; float PM=uPortal2.y;',
+    // the camera flies toward the star: it drifts to the centre of the screen while we zoom in
+    '  vec2 s0=uMap.xy+pc*uMap.zw;',
+    '  vec2 scn=mix(s0,0.5*uRes,smoothstep(0.12,0.9,PP)*PM);',
+    '  vec2 sd=(p-scn)/uRes.y; float sr=length(sd);',
+    '  vec2 cc=(p-0.5*uRes)/uRes.y;',
+    '  if(PM>0.0005){',
+    '    float zt=smoothstep(0.18,1.0,PP);',
+    '    uv=pc+(p-scn)/(uMap.zw*exp(2.1*zt*zt*PM));',
+    '    vec2 q0=(uv-pc)*vec2(1.0,1.0/uAspect); float r0=length(q0);',
+    '    q0=rot(q0,PM*smoothstep(0.06,0.7,PP)*2.8*exp(-r0/(0.02+0.2*PP))*uPortal2.w);',
+    '    uv=pc+q0*vec2(1.0,uAspect);',
+    // parting: the painted currents are pushed aside from the middle of the screen
+    '    if(uPortal.w>0.5&&uPortal.w<1.5) uv.x-=cc.x/(abs(cc.x)+0.08)*smoothstep(0.55,1.0,PP)*0.06*PM/exp(2.1*zt*zt*PM);',
+    '  }',
     '  vec3 skyT=texture2D(uSky,uv).rgb;',
     '  vec3 seaT=texture2D(uSea,uv).rgb;',
     '  vec3 msk=texture2D(uMask,uv).rgb;',
@@ -59,7 +181,10 @@
     '    vec2 d2=(uvS-uSpiral2.xy)*vec2(1.0,1.0/uAspect); float r2=dot(d2,d2);',
     '    float a1=uSpiral1.z*exp(-r1/(uSpiral1.w*uSpiral1.w)); float a2=uSpiral2.z*exp(-r2/(uSpiral2.w*uSpiral2.w));',
     '    uvS+=(vec2(-d1.y,d1.x)*a1+vec2(-d2.y,d2.x)*a2)*vec2(1.0,uAspect)*skyW;',
-    // sky 2: two-phase flow map — paint slides along its own brushstrokes; currents surge and calm
+    // sky 2: stars react — magnify, ripple the sky around them, lean toward the cursor
+    '    vec2 zc=vec2(0.0); float zr=1.0; float zamp=0.0; float zph=0.0; float zw=0.0;',
+    grouped('uvS', warpReach, warpBlock),
+    // sky 3: two-phase flow map — paint slides along its own brushstrokes; currents surge and calm
     '    vec2 f=(texture2D(uSky,uvS).rg*2.0-1.0)*vec2(1.0,uAspect)*uParams.x;',
     '    f*=0.62+0.76*texture2D(uNoise,uvS*vec2(1.1,0.8)+vec2(uClock*0.009,-uClock*0.006)).r;',
     '    float t=uFlowT/4.0+nz.r*2.0;',
@@ -70,7 +195,17 @@
     '    vec3 ca=mix(o,img(a),smoothstep(0.05,0.6,texture2D(uSky,a).b));',
     '    vec3 cb=mix(o,img(b),smoothstep(0.05,0.6,texture2D(uSky,b).b));',
     '    col=blend2(ca,cb,w0,uvS,length(f)*0.5);',
-    // sky 3: light running along the currents, strongest on the pale strokes
+    // sky 4: inside a halo, the star's own golden strokes swirl around its centre (two-phase, never tears)
+    '    if(zw>0.001){',
+    '      vec2 L=(uvS-zc)*vec2(1.0,1.0/uAspect); float lr=length(L);',
+    '      float ang=zamp*ss(zr*1.2,zr*0.2,lr);',
+    '      float s0=fract(zph); float s1=fract(zph+0.5);',
+    '      float ws=smoothstep(0.0,1.0,1.0-abs(1.0-2.0*s0));',
+    '      vec2 A=zc+rot(L,ang*(s0-0.5))*vec2(1.0,uAspect);',
+    '      vec2 B=zc+rot(L,ang*(s1-0.5))*vec2(1.0,uAspect);',
+    '      col=mix(col,blend2(img(A),img(B),ws,uvS,lr*abs(ang)*0.5),zw);',
+    '    }',
+    // sky 5: light running along the currents, strongest on the pale strokes
     '    float lt=uFlowT/3.0+nz.g*2.0; float q0=fract(lt); float q1=fract(lt+0.5); float wq=1.0-abs(1.0-2.0*q0);',
     '    vec2 ls=uvS*vec2(2.6,2.0);',
     '    float n0=texture2D(uNoise,ls-f*2.2*(q0-0.5)).g; float n1=texture2D(uNoise,ls-f*2.2*(q1-0.5)).g;',
@@ -105,29 +240,41 @@
     // foreground: very subtle moving moonlight on driftwood and rock (light only, no movement)
     '  float cw=texture2D(uNoise,uv*vec2(4.0,7.0)+vec2(uClock*0.006,uClock*0.004)).r;',
     '  col*=1.0+msk.r*(cw-0.5)*0.09*uFx.y;',
-    // stars & moon: stay in place, glow and pulse at their own pace
+    // stars & moon: stay in place, glow and pulse at their own pace, brighter when hovered or flaring
     '  vec2 q=vec2(uv.x,uv.y/uAspect);',
     '  vec2 sp=vec2(par.x,par.y/uAspect);',
-    '  vec3 glow=vec3(0.0); float sm=0.0;',
-    '  for(int i=0;i<11;i++){',
-    '    vec4 s=uStars[i];',
-    '    vec2 c=vec2(s.x,s.y/uAspect)-sp;',
-    '    vec2 dv=q-c; float d2=dot(dv,dv);',
-    '    if(d2<s.w*s.w*5.0){',
-    '      vec2 tw=uTwinkle[i];',
-    '      float h=exp(-d2/(s.w*s.w*0.55));',
-    '      float k=exp(-d2/(s.z*s.z*0.9));',
-    '      glow+=vec3(1.0,0.80,0.36)*h*(0.05+0.11*tw.x)+vec3(1.0,0.95,0.80)*k*(0.04+0.10*tw.y);',
-    '      sm=max(sm,k);',
-    '    }',
-    '  }',
-    '  vec2 mc=vec2(uMoon.x,uMoon.y/uAspect)-sp; float md=length(q-mc);',
-    '  if(md<uMoon.w*2.2) glow+=vec3(1.0,0.86,0.50)*exp(-(md*md)/(uMoon.w*uMoon.w*0.9))*(0.05+0.04*uMoonPulse);',
-    '  sm=max(sm,smoothstep(uMoon.z*1.05,uMoon.z*0.7,md));',
+      '  vec3 glow=vec3(0.0); float sm=0.0;',
+    grouped('uv', glowReach, glowBlock),
     '  float ist=smoothstep(0.25,0.75,uIntro);',
     '  col*=1.0-(1.0-ist)*0.55*sm;',
     '  glow*=ist*uParams.w;',
     '  col=1.0-(1.0-col)*(1.0-glow);',
+    // ---- portal: currents stream past, light floods out, then the destination's night opens ----
+    '  if(PM>0.0005){',
+    '    float st=PM*smoothstep(0.14,0.5,PP)*(1.0-0.5*smoothstep(0.82,1.0,PP));',
+    '    if(st>0.002){',
+    '      vec3 acc=col; float jt=hash(p)*0.9;',
+    '      for(int k=1;k<7;k++){acc+=img(pc+(uv-pc)*(1.0-st*0.2*(float(k)+jt)/6.6));}',
+    '      col=mix(col,acc/7.0,min(1.0,st*1.3));',
+    '    }',
+    '    float R=mix(0.02,1.2,smoothstep(0.04,0.8,PP));',
+    '    col+=vec3(1.0,0.83,0.46)*exp(-sr*sr/(R*R*0.3))*PM*smoothstep(0.0,0.28,PP)*(1.0-smoothstep(0.5,0.9,PP))*0.9;',
+    '    col=mix(col,col*vec3(0.85,0.92,1.15),PM*smoothstep(0.3,0.8,PP)*0.5);',
+    '    float tt=smoothstep(0.56,1.0,PP);',
+    // the edge of the opening is painterly: swirling strokes around the star, vertical strokes for the parting
+    '    float an=atan(sd.y,sd.x+1e-5)/6.2832;',
+    '    float ns=texture2D(uNoise,vec2(an*2.0+sr*0.7,sr*3.0)).r*0.6+texture2D(uNoise,vec2(an*7.0+sr*1.5,sr*8.0)).g*0.4;',
+    '    float nb=texture2D(uNoise,vec2(cc.x*0.5,cc.y*1.4)+vec2(0.31,0.17)).g*0.7+texture2D(uNoise,vec2(cc.x*0.9,cc.y*4.0)+vec2(0.6,0.2)).b*0.3;',
+    '    float n=texture2D(uNoise,p/uRes.y*1.6+vec2(0.13,0.41)).g;',
+    '    float nv;',
+    '    if(uPortal.w<0.5){float Rn=tt*3.2-0.25+(ns-0.5)*0.55;nv=ss(Rn+0.06,Rn-0.06,sr);}',
+    '    else if(uPortal.w<1.5){float Rn=tt*1.9-0.15+(nb-0.5)*0.4;nv=ss(Rn+0.07,Rn-0.07,abs(cc.x));}',
+    '    else{float Rn=tt*3.6-0.6+(ns-0.5)*0.3;nv=ss(Rn+0.45,Rn-0.45,sr);}',
+    '    nv*=uPortal2.x*PM;',
+    '    vec3 night=vec3(0.020,0.039,0.180)+(n-0.5)*0.025;',
+    '    float spk=uPortal2.z*nv*(1.0-smoothstep(0.9,1.0,PP))*step(0.997,hash(floor(p/2.0)))*(0.6+0.4*sin(uClock*9.0+p.x));',
+    '    col=mix(col,night,nv)+vec3(1.0,0.85,0.5)*spk;',
+    '  }',
     // atmosphere: vignette, scroll dimming, intro fade, film grain
     '  vec2 sc=p/uRes-0.5;',
     '  col*=mix(1.0-0.30*uFx.z,1.0,smoothstep(0.95,0.25,length(sc*vec2(1.05,1.25))));',
@@ -173,11 +320,12 @@
   }
 
   function smooth(a, b, x) { var t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); }
+  // small deterministic random, so each star keeps its own character between visits
+  function seeded(n) { var x = Math.sin(n * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); }
 
   /**
    * new Painting(canvas, options)
-   * options.sources: { painting: [urls], sky, sea, mask, noise }
-   * options.reducedMotion: boolean
+   * options.sources: { painting: [urls], sky, sea, mask, noise, blur }
    * options.introDuration: seconds (0 to skip)
    */
   function Painting(canvas, options) {
@@ -202,6 +350,24 @@
     this._lastDraw = 0;
     this.params = [0.036, 0.022, 1.1, 1.0];   // sky flow, sea flow, swell, glow
     this.fx = [1, 1, 1, 1];                   // grain, light on wood, vignette, light along the currents
+    // every light has its own pace and character
+    this.lights = LIGHTS.map(function (s, i) {
+      return {
+        h: 0, ht: 0, a: 0,
+        phase: seeded(i + 1),
+        speed: (0.20 + 0.22 * seeded(i + 21)) * SENSE[i],
+        ampIdle: 0.08 + 0.07 * seeded(i + 41),
+        breathF: 1.5 + 1.0 * seeded(i + 61), breathP: seeded(i + 81) * 6.283,
+        flare: 0, flareStart: -1
+      };
+    });
+    this.interactive = [];
+    this.cursor = null;           // image coordinates of the pointer, or null
+    this.portalState = null;
+    this.nextFlare = 5 + 4 * Math.random();
+    this._sf = new Float32Array(48);
+    this._sg = new Float32Array(48);
+    this._sd = new Float32Array(12);
     this._raf = 0;
     this._last = 0;
     this._frame = this._frame.bind(this);
@@ -237,7 +403,8 @@
     gl.enableVertexAttribArray(loc);
     gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
 
-    var names = ['uImage', 'uSky', 'uSea', 'uMask', 'uNoise', 'uBlur', 'uRes', 'uMap', 'uAspect', 'uHorizon', 'uFlowT', 'uClock', 'uIntro', 'uScroll', 'uMouse', 'uStars', 'uTwinkle', 'uMoon', 'uMoonPulse', 'uParams', 'uFx', 'uSpiral1', 'uSpiral2'];
+    var names = ['uImage', 'uSky', 'uSea', 'uMask', 'uNoise', 'uBlur', 'uRes', 'uMap', 'uAspect', 'uHorizon', 'uFlowT', 'uClock', 'uIntro', 'uScroll', 'uMouse',
+      'uParams', 'uFx', 'uSpiral1', 'uSpiral2', 'uSF', 'uSG', 'uSD', 'uPortal', 'uPortal2'];
     this.u = {};
     names.forEach(function (n) { self.u[n] = gl.getUniformLocation(prog, n); });
 
@@ -259,11 +426,8 @@
       gl.uniform1i(self.u.uMask, 3); gl.uniform1i(self.u.uNoise, 4); gl.uniform1i(self.u.uBlur, 5);
       gl.uniform1f(self.u.uAspect, META.aspect);
       gl.uniform1f(self.u.uHorizon, META.horizon);
-      var stars = new Float32Array(11 * 4);
-      META.stars.forEach(function (s, i) { stars.set([s.x, s.y, s.core, s.halo], i * 4); });
-      gl.uniform4fv(self.u.uStars, stars);
-      gl.uniform4f(self.u.uMoon, META.moon.x, META.moon.y, META.moon.core, META.moon.halo);
       self.resize();
+      self._updateLights(0);
       self._draw();
       if (gl.getError() !== gl.NO_ERROR) throw new Error('WebGL draw error');
       self.ready = true;
@@ -354,25 +518,145 @@
   Painting.prototype.setView = function (view) {
     this.view = view;
     if (this.gl && this.cssSize) this._applyMap();
-    if (this.ready && !this.running) this._draw();
+    this._redraw();
+  };
+  // When the painting is not animating (reduce motion, a still frame), changes are drawn once on
+  // the next frame, however many arrive together (scrolling sets the view, the dimming and the budget).
+  Painting.prototype._redraw = function () {
+    if (!this.ready || this.running || this._redrawQueued) return;
+    var self = this;
+    this._redrawQueued = true;
+    requestAnimationFrame(function () {
+      self._redrawQueued = false;
+      if (self.ready && !self.running && self.gl && !self.gl.isContextLost()) self._draw();
+    });
   };
 
   // Lower resolution / frame rate while the painting sits behind a dark veil.
   Painting.prototype.setBudget = function (scale, fps) {
     var changed = scale !== this.budget.scale;
     this.budget = { scale: scale, fps: fps };
-    if (changed && this.gl) { this.resize(); if (this.ready && !this.running) this._draw(); }
+    if (changed && this.gl) { this.resize(); this._redraw(); }
   };
 
-  // Image-normalised point -> CSS pixel position inside the canvas (for star hotspots)
+  // Image-normalised point -> CSS pixel position inside the canvas
   Painting.prototype.toScreen = function (x, y) {
     var m = this.cssMap || Painting.coverMap(window.innerWidth, window.innerHeight, Painting.focalFor(window.innerWidth, window.innerHeight));
     return { x: m[0] + x * m[2], y: m[1] + y * m[3], scale: m[2] };
   };
 
   Painting.prototype.setMouse = function (x, y) { this.mouseTarget = [x, y]; };
-  Painting.prototype.setScroll = function (v) { this.scroll = v; if (!this.running && this.ready) this._draw(); };
+  Painting.prototype.setScroll = function (v) { this.scroll = v; this._redraw(); };
   Painting.prototype.skipIntro = function () { this.intro = 1; this.introStart = -1e9; };
+
+  /* ---------- interaction with the stars ---------- */
+
+  // Which lights respond to the pointer (indices into LIGHTS; 11 = moon).
+  Painting.prototype.setInteractive = function (list) { this.interactive = list || []; };
+
+  // Pointer position in CSS pixels (or null when it leaves).
+  Painting.prototype.setCursor = function (x, y) {
+    if (x == null) { this.cursor = null; return; }
+    var m = this.cssMap;
+    if (!m) return;
+    this.cursor = [(x - m[0]) / m[2], (y - m[1]) / m[3]];
+  };
+
+  Painting.prototype.setHover = function (i, on) {
+    var L = this.lights[i];
+    if (!L) return;
+    L.ht = on ? 1 : 0;
+    if (!this.running && this.ready) { L.h = L.ht; this._updateLights(0); this._redraw(); }
+  };
+
+  // A light brightens for a moment; delay in seconds lets several flare in sequence.
+  Painting.prototype.flare = function (i, delay) {
+    var L = this.lights[i];
+    if (L) L.flareStart = this.clock + (delay || 0);
+  };
+  Painting.prototype.flareSequence = function (list, gap) {
+    var self = this;
+    (list || []).forEach(function (i, k) { self.flare(i, k * (gap || 0.3)); });
+  };
+
+  /* ---------- portal ---------- */
+
+  // Fly into light i. o: { style: 0 iris | 1 parting | 2 soft, night: 0..1, sparkle: 0..1, duration (s),
+  //   coverAt: progress at which onCover fires (the screen no longer shows the start), onCover, onEnd }
+  Painting.prototype.startPortal = function (i, o) {
+    var s = LIGHTS[i];
+    o = o || {};
+    this.portalState = {
+      index: i, p: 0, dur: o.duration || 1.05, style: o.style || 0, night: o.night == null ? 1 : o.night,
+      sparkle: o.sparkle || 0, mix: 1, cx: s.x, cy: s.y, sense: SENSE[i],
+      coverAt: o.coverAt || 0.8, onCover: o.onCover, onEnd: o.onEnd, covered: false, ended: false, fade: 0
+    };
+    this.lights[i].ht = 1;
+  };
+  // Let the portal fade away (after the destination is in place).
+  Painting.prototype.endPortal = function (seconds, done) {
+    var P = this.portalState;
+    if (!P) { if (done) done(); return; }
+    P.fade = Math.max(0.05, seconds || 0.45);
+    P.fadeStart = this.clock;
+    P.onDone = done;
+  };
+
+  Painting.prototype._stepPortal = function () {
+    var P = this.portalState;
+    if (!P) return;
+    if (!P.fade) {
+      if (!P.covered && P.p >= P.coverAt) { P.covered = true; if (P.onCover) P.onCover(); }
+      if (!P.ended && P.p >= 1) { P.ended = true; if (P.onEnd) P.onEnd(); }
+    } else {
+      var t = (this.clock - P.fadeStart) / P.fade;
+      P.mix = 1 - smooth(0, 1, t);
+      if (t >= 1) {
+        this.lights[P.index].ht = 0;
+        var done = P.onDone;
+        this.portalState = null;
+        if (done) done();
+      }
+    }
+  };
+
+  // Advance every light: hover easing, cursor approach, swirl phase, flares, breathing, twinkle.
+  Painting.prototype._updateLights = function (dt) {
+    var P = this.portalState, t = this.clock, sf = this._sf, sg = this._sg, sd = this._sd;
+    for (var i = 0; i < 12; i++) {
+      var L = this.lights[i], s = LIGHTS[i], E = effectRadius(i);
+      L.h += (L.ht - L.h) * Math.min(1, dt * (L.ht > L.h ? 7 : 2.4));
+      var at = 0;
+      if (this.cursor && this.interactive.indexOf(i) !== -1) {
+        var dx = this.cursor[0] - s.x, dy = (this.cursor[1] - s.y) / META.aspect, dl = Math.sqrt(dx * dx + dy * dy);
+        at = 1 - smooth(E * 1.1, E * 4.2, dl);
+        if (dl > 1e-5) L.dir = [dx / dl, dy / dl];   // kept when the pointer leaves, so the lean eases back
+      }
+      L.a += (at - L.a) * Math.min(1, dt * 5);
+      var pb = P && P.index === i ? smooth(0, 0.35, P.p) * P.mix : 0;
+      L.phase += dt * L.speed * (1 + 2.6 * L.h + 7 * pb);
+      if (L.flareStart >= 0) {
+        var ft = (t - L.flareStart) / 1.8;
+        if (ft >= 1) { L.flare = 0; L.flareStart = -1; } else L.flare = ft > 0 ? Math.pow(Math.sin(Math.PI * ft), 2) : 0;
+      }
+      var ph = L.phase - Math.floor(L.phase);
+      sf[i * 4] = Math.min(1, L.h + pb);
+      var dir = L.dir || [0, 0];
+      sf[i * 4 + 1] = L.a * dir[0];     // the pull toward the pointer (x); its y goes in uSD
+      sd[i] = L.a * dir[1];
+      sf[i * 4 + 2] = ph;
+      sf[i * 4 + 3] = L.ampIdle + 0.32 * L.h + 0.6 * pb;
+      if (i === MOON) {
+        sg[i * 4] = 0.5 + 0.5 * Math.sin(t * 0.33);
+        sg[i * 4 + 1] = 0;
+      } else {
+        sg[i * 4] = 0.5 + 0.5 * Math.sin(t * (0.55 + ((i * 0.618) % 1) * 0.8) + i * 2.3);
+        sg[i * 4 + 1] = 0.5 + 0.5 * Math.sin(t * (1.3 + ((i * 0.381) % 1) * 1.1) + i * 1.1);
+      }
+      sg[i * 4 + 2] = 0.35 * L.flare + 1.4 * pb;
+      sg[i * 4 + 3] = 0.010 * Math.sin(t * L.breathF + L.breathP) * (0.3 + L.h) + 0.03 * L.flare;
+    }
+  };
 
   Painting.prototype._draw = function () {
     var gl = this.gl, u = this.u;
@@ -383,18 +667,20 @@
     gl.uniform2f(u.uMouse, this.mouse[0], this.mouse[1]);
     gl.uniform4f(u.uParams, this.params[0], this.params[1], this.params[2], this.params[3]);
     gl.uniform4f(u.uFx, this.fx[0], this.fx[1], this.fx[2], this.fx[3]);
-    // each star twinkles at its own pace (computed here once per frame, not per pixel)
-    var t = this.clock, tw = this._tw || (this._tw = new Float32Array(22));
-    for (var i = 0; i < 11; i++) {
-      tw[i * 2] = 0.5 + 0.5 * Math.sin(t * (0.55 + ((i * 0.618) % 1) * 0.8) + i * 2.3);
-      tw[i * 2 + 1] = 0.5 + 0.5 * Math.sin(t * (1.3 + ((i * 0.381) % 1) * 1.1) + i * 1.1);
+    gl.uniform4fv(u.uSF, this._sf);
+    gl.uniform4fv(u.uSG, this._sg);
+    gl.uniform4fv(u.uSD, this._sd);
+    var P = this.portalState;
+    if (P) {
+      gl.uniform4f(u.uPortal, P.cx, P.cy, P.p, P.style);
+      gl.uniform4f(u.uPortal2, P.night, P.mix, P.sparkle, P.sense);
+    } else {
+      gl.uniform4f(u.uPortal2, 0, 0, 0, 1);
     }
-    gl.uniform2fv(u.uTwinkle, tw);
     // the two spirals wind and unwind slowly, in opposite senses and out of step
     var amp = this.intro * 0.05;
     gl.uniform4f(u.uSpiral1, 545 / 1024, 212 / 765, amp * Math.sin(this.flowT * 0.21), 0.13);
     gl.uniform4f(u.uSpiral2, 735 / 1024, 292 / 765, -amp * 0.8 * Math.sin(this.flowT * 0.27 + 1.3), 0.085);
-    gl.uniform1f(u.uMoonPulse, 0.5 + 0.5 * Math.sin(t * 0.33));
     gl.drawArrays(gl.TRIANGLES, 0, 3);
   };
 
@@ -404,6 +690,7 @@
     this.flowT = seconds;
     this.intro = intro == null ? 1 : intro;
     this.mouse = this.mouseTarget.slice();
+    this._updateLights(0);
     this._draw();
   };
 
@@ -432,10 +719,20 @@
     this.flowT += dt * flowSpeed;
     this.mouse[0] += (this.mouseTarget[0] - this.mouse[0]) * Math.min(1, dt * 2.2);
     this.mouse[1] += (this.mouseTarget[1] - this.mouse[1]) * Math.min(1, dt * 2.2);
-    if (this.visible && (this.budget.fps >= 60 || now - this._lastDraw >= 1000 / this.budget.fps - 4)) {
+    // now and then one star shimmers a little brighter than the rest
+    if (this.clock > this.nextFlare && this.intro >= 1) {
+      this.flare(Math.floor(Math.random() * 12));
+      this.nextFlare = this.clock + 5 + Math.random() * 7;
+    }
+    var P = this.portalState;
+    if (P && !P.fade) P.p = Math.min(1, P.p + dt / P.dur);
+    this._updateLights(dt);
+    this._stepPortal();
+    var portalActive = !!this.portalState;
+    if (this.visible && (portalActive || this.budget.fps >= 60 || now - this._lastDraw >= 1000 / this.budget.fps - 4)) {
       this._lastDraw = now;
       this._draw();
-      if (this.budget.fps >= 60) this._adapt(dt);
+      if (this.budget.fps >= 60 && !portalActive) this._adapt(dt);
     }
     if (this.opts.onFrame) this.opts.onFrame(this);
     this._raf = requestAnimationFrame(this._frame);
@@ -456,6 +753,9 @@
   };
 
   Painting.META = META;
+  Painting.LIGHTS = LIGHTS;
+  Painting.MOON = MOON;
+  Painting.effectRadius = effectRadius;
   window.RJY = window.RJY || {};
   window.RJY.Painting = Painting;
 })();

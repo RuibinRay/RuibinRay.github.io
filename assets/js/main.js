@@ -1,6 +1,6 @@
 /*
  * main.js — puts it all together: the living painting behind the page, the opening sequence,
- * star shortcuts, the camera that drifts through the painting as you scroll, navigation,
+ * the star portals, the camera that drifts through the painting as you scroll, navigation,
  * section rendering and deep links.
  */
 (function () {
@@ -34,11 +34,14 @@
     doc.classList.add('is-draft');
     document.body.appendChild(h('a', { class: 'draft-badge', href: location.pathname, title: 'Leave draft mode', text: 'Draft view — placeholders visible' }));
   }
+  if (!RJY.finePointer) doc.classList.add('is-touch');
 
   /* ---------- 2. the living painting ---------- */
   var stage = document.querySelector('.stage');
   var canvas = stage.querySelector('.stage__canvas');
   var still = stage.querySelector('.stage__still');
+  var stageVeil = h('div', { class: 'stage__veil' });
+  stage.appendChild(stageVeil);
   var vw = function () { return window.innerWidth; }, vh = function () { return window.innerHeight; };
 
   function paintingSources() {
@@ -63,18 +66,20 @@
     // soft CSS glows over the painted stars
     var glows = stage.querySelector('.stage__glows');
     if (!glows.childElementCount) {
-      RJY.Painting.META.stars.concat([RJY.Painting.META.moon]).forEach(function (s, i) {
-        glows.appendChild(h('span', { 'data-x': s.x, 'data-y': s.y, 'data-r': s.halo, style: { animationDelay: (i * 0.7) + 's' } }));
+      RJY.Painting.LIGHTS.forEach(function (s, i) {
+        glows.appendChild(h('span', { 'data-i': i, 'data-x': s.x, 'data-y': s.y, 'data-r': s.halo, style: { animationDelay: (i * 0.7) + 's' } }));
       });
     }
     layoutStill();
   }
 
   var stillBase = null;
-  function layoutStill() {
-    var w = vw(), hh = vh();
-    var focal = RJY.Painting.focalFor(w, hh);
-    var base = RJY.Painting.coverMap(w, hh, focal), m = RJY.Painting.viewMap(w, hh, focal, camera.current);
+  function stillMap(view) {
+    var w = vw(), hh = vh(), focal = RJY.Painting.focalFor(w, hh);
+    return { base: RJY.Painting.coverMap(w, hh, focal), m: RJY.Painting.viewMap(w, hh, focal, view) };
+  }
+  function layoutStill(view) {
+    var mm = stillMap(view || camera.current), base = mm.base, m = mm.m;
     // size the image to the painting once per resize, then move it with a cheap transform
     if (!stillBase || stillBase[2] !== base[2] || stillBase[3] !== base[3]) {
       still.style.width = base[2] + 'px'; still.style.height = base[3] + 'px';
@@ -87,6 +92,15 @@
       g.style.width = g.style.height = r + 'px';
     });
   }
+  // hover on the still painting: a CSS glow brightens over the star
+  function stillHover(i, on) {
+    var g = stage.querySelector('.stage__glows span[data-i="' + i + '"]');
+    if (g) g.classList.toggle('is-lit', on);
+  }
+  RJY.starHover = function (i, on) {
+    if (painting && glReady) painting.setHover(i, on);
+    else stillHover(i, on);
+  };
 
   function startPainting() {
     var reduced = RJY.reducedMotion;
@@ -114,6 +128,7 @@
       else { painting.start(); }
       intro.run(introDur);
       hotspots.build();
+      update();
     }).catch(function (err) {
       console.warn('Living painting unavailable, showing the still painting instead:', err && err.message);
       clearTimeout(fallbackTimer);
@@ -151,55 +166,211 @@
     done: function () {
       if (this._done) return; this._done = true;
       sessionStorageSet('rjy-intro', '1');
+      setTimeout(function () { hotspots.place(); }, 900);
       if (this.skipHandler) ['wheel', 'touchmove', 'keydown', 'pointerdown'].forEach(function (ev) { window.removeEventListener(ev, intro.skipHandler); });
-      setTimeout(function () { hotspots.hint(); }, 800);
+      setTimeout(function () { hotspots.hint(); }, 700);
     }
   };
 
   RJY.intro = intro;
 
-  /* ---------- 4. star shortcuts ---------- */
+  /* ---------- 4. star portals ----------
+     Painted stars that lead somewhere. There is no circle or button: the invisible hit area is a
+     little larger than the star, and the star itself reacts (in the painting) when you come near,
+     hover or focus it. Selecting one opens a portal into its section. */
   var hotspots = {
     defs: [
-      { star: 5, label: 'About me', href: '#about' },
-      { star: 10, label: 'My journey', href: '#experience' },
-      { star: 6, label: 'My world', href: '#world' },
-      { moon: true, label: 'My work', href: '#projects' },
-      { star: 8, label: 'My palette', href: '#skills' },
-      { star: 7, label: 'How it connects', href: '#constellation' },
-      { star: 4, label: 'Say hello', href: '#contact' }
+      // star: index in RJY.Painting.LIGHTS (11 = the moon). style: 0 iris, 1 parting, 2 soft. night: 0 keeps the painting.
+      { star: 10, label: 'Discover my story', href: '#about', style: 2 },
+      { star: 5, label: 'Follow my journey', href: '#experience', style: 0, sparkle: 1 },
+      { star: 6, label: 'Explore my world', href: '#world', style: 1 },
+      { star: 7, label: 'Discover my projects', href: '#projects', style: 0, sparkle: 1 },
+      { star: 8, label: 'See my palette', href: '#skills', style: 2 },
+      { star: 9, label: 'See how it all connects', href: '#constellation', style: 0, sparkle: 1 },
+      { star: 11, label: 'Say hello', href: '#contact', style: 0, night: 0 }
     ],
     els: [],
     build: function () {
-      var wrap = document.querySelector('.hotspots'), M = RJY.Painting.META;
+      var wrap = document.querySelector('.hotspots'), L = RJY.Painting.LIGHTS;
       wrap.innerHTML = '';
       this.els = this.defs.map(function (d) {
-        var p = d.moon ? M.moon : M.stars[d.star];
-        var a = h('a', { class: 'hotspot', href: d.href, 'aria-label': d.label }, h('span', { class: 'hotspot__label', text: d.label }));
-        a._pt = p; wrap.appendChild(a); return a;
+        var label = h('span', { class: 'hotspot__label' }, h('span', { class: 'hotspot__text', text: d.label }));
+        var a = h('a', { class: 'hotspot', href: d.href, 'aria-label': d.label, 'data-star': d.star }, label);
+        a._def = d; a._pt = L[d.star]; a._label = label;
+        var on = function () { RJY.starHover(d.star, true); };
+        var off = function () { if (document.activeElement !== a) RJY.starHover(d.star, false); };
+        a.addEventListener('pointerenter', on);
+        a.addEventListener('pointerleave', off);
+        a.addEventListener('focus', on);
+        a.addEventListener('blur', function () { RJY.starHover(d.star, false); });
+        a.addEventListener('click', function (e) {
+          if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;   // let new-tab clicks work normally
+          e.preventDefault();
+          portal.go(d, e.detail === 0);   // detail 0: Enter on the keyboard
+        });
+        wrap.appendChild(a);
+        return a;
       });
       this.place();
     },
+    // Keep each portal on its painted star (the painting is cropped differently on every screen).
     place: function () {
       if (!this.els.length) return;
-      var rects = Array.prototype.map.call(document.querySelectorAll('.hero__name .line > span, .hero__tagline, .hero__intro, .cta, .hero__cue'), function (e) { return e.getBoundingClientRect(); });
+      // (while the opening plays, the name's letters are still sliding up inside their lines, so a
+      // line's own box gives the height and the letters give the width)
+      var rects = Array.prototype.map.call(document.querySelectorAll('.hero__name .line > span'), function (e) {
+        var t = e.getBoundingClientRect(), l = e.parentNode.getBoundingClientRect();
+        return { left: t.left, right: t.right, top: l.top, bottom: l.bottom };
+      }).concat(Array.prototype.map.call(document.querySelectorAll('.hero__tagline, .hero__intro, .cta, .hero__cue'), function (e) { return e.getBoundingClientRect(); }));
       var w = vw(), hh = vh(), focal = RJY.Painting.focalFor(w, hh), m = RJY.Painting.viewMap(w, hh, focal, RJY.Painting.heroView(w, hh));
+      var navH = nav ? nav.offsetHeight : 76, scrollY = window.pageYOffset;
       this.els.forEach(function (a) {
-        var x = m[0] + a._pt.x * m[2], y = m[1] + a._pt.y * m[3] + window.pageYOffset * 0;
-        var hidden = x < 24 || x > w - 24 || y < 96 || y > hh - 90 || rects.some(function (r) { return r.width && x > r.left - 40 && x < r.right + 40 && y > r.top - 40 && y < r.bottom + 40; });
+        var i = a._def.star, x = m[0] + a._pt.x * m[2], y = m[1] + a._pt.y * m[3];
+        var halo = RJY.Painting.effectRadius(i) * m[2];
+        var r = Math.max(24, Math.min(88, halo * 0.75));
+        var hidden = x < 14 || x > w - 14 || y < navH + 10 || y > hh - 70 || rects.some(function (b) {
+          b = { left: b.left, right: b.right, top: b.top + scrollY, bottom: b.bottom + scrollY };
+          return b.right > b.left && x > b.left - 30 && x < b.right + 30 && y > b.top - 30 && y < b.bottom + 30;
+        });
         a.style.left = x + 'px'; a.style.top = y + 'px';
-        a.style.display = hidden ? 'none' : '';
+        a.style.width = a.style.height = (2 * r) + 'px';
+        a.style.marginLeft = a.style.marginTop = (-r) + 'px';
+        a.hidden = hidden;
+        a._visible = !hidden;
+        // label below the star (above it near the bottom of the screen), kept inside the window
+        var lab = a._label, below = y < hh * 0.62, off = Math.max(18, Math.min(56, halo * 0.6)) + 8;
+        lab.classList.toggle('is-above', !below);
+        lab.style.top = below ? (r + off) + 'px' : '';
+        lab.style.bottom = below ? '' : (r + off) + 'px';
+        var lw = lab.offsetWidth || 160;
+        var shift = Math.max(12 - (x - lw / 2), Math.min(0, (w - 12) - (x + lw / 2)));
+        lab.style.setProperty('--shift', shift + 'px');
       });
     },
+    visibleStars: function () {
+      return this.els.filter(function (a) { return a._visible; }).map(function (a) { return a._def.star; });
+    },
+    // After the opening, the portal stars shimmer one after another, once per visit.
     hint: function () {
-      var wrap = document.querySelector('.hotspots');
-      if (RJY.reducedMotion || sessionStorageGet('rjy-hint')) return;
-      wrap.classList.add('is-hinting'); sessionStorageSet('rjy-hint', '1');
-      setTimeout(function () { wrap.classList.remove('is-hinting'); }, 5200);
+      if (RJY.reducedMotion || sessionStorageGet('rjy-hint') || !painting || !glReady) return;
+      sessionStorageSet('rjy-hint', '1');
+      painting.flareSequence(this.visibleStars(), 0.32);
     }
   };
 
-  /* ---------- 5. camera: drift through the painting while scrolling ---------- */
+  /* ---------- 5. portal: a star becomes a doorway into a section ---------- */
+  var cameraFrozen = false;
+  var portal = {
+    busy: false,
+    go: function (d, fromKeyboard) {
+      if (this.busy) return;
+      var target = document.querySelector(d.href);
+      if (!target) return;
+      this.busy = true;
+      if (!doc.classList.contains('intro-done')) intro.finish();
+      var from = window.pageYOffset, self = this;
+      var living = painting && glReady && painting.running && !RJY.reducedMotion;
+      blockInput(true);
+      doc.classList.add('is-portal');
+      var jumped = false, finished = false;
+      function go() { if (!jumped) { jumped = true; jump(d, from, fromKeyboard); } }
+      // safety net: if the animation stalls (a lost graphics context, a hidden tab), land anyway
+      var guard = setTimeout(function () {
+        if (painting && painting.portalState) { painting.portalState = null; painting.setHover(d.star, false); }
+        go(); arrive(); finish();
+      }, 5000);
+      function finish() {
+        if (finished) return;
+        finished = true;
+        clearTimeout(guard);
+        doc.classList.remove('is-arriving', 'is-portal-still');
+        blockInput(false);
+        self.busy = false;
+        RJY.starHover(d.star, false);
+        var head = target.querySelector('h2');
+        if (head) { head.setAttribute('tabindex', '-1'); try { head.focus({ preventScroll: true }); } catch (e) {} }
+      }
+      if (living) {
+        cameraFrozen = true;
+        painting.setBudget(1, 60);
+        painting.startPortal(d.star, {
+          style: d.style || 0, night: d.night == null ? 1 : d.night, sparkle: d.sparkle || 0, duration: 1.0, coverAt: 0.82,
+          onCover: go,
+          onEnd: function () { go(); arrive(); painting.endPortal(0.5, finish); }
+        });
+      } else if (!RJY.reducedMotion && doc.classList.contains('is-still')) {
+        // still painting: zoom toward the star, let the night close in, then open on the section
+        doc.classList.add('is-portal-still');
+        RJY.starHover(d.star, true);
+        var mm = stillMap(camera.current), sx = mm.m[0] + RJY.Painting.LIGHTS[d.star].x * mm.m[2], sy = mm.m[1] + RJY.Painting.LIGHTS[d.star].y * mm.m[3];
+        var k = 2.4;
+        still.style.transform = 'translate(' + (sx - (sx - mm.m[0]) * k).toFixed(1) + 'px,' + (sy - (sy - mm.m[1]) * k).toFixed(1) + 'px) scale(' + (mm.m[2] / mm.base[2] * k).toFixed(4) + ')';
+        stageVeil.style.background = 'radial-gradient(circle at ' + sx + 'px ' + sy + 'px, rgba(255,226,150,.35) 0, rgba(5,10,46,.7) 10vmax, #050a2e 36vmax)';
+        setTimeout(function () { go(); arrive(); setTimeout(finish, 520); }, 700);
+      } else {
+        // reduced motion: a simple, quick crossfade
+        setTimeout(function () { go(); arrive(); setTimeout(finish, 320); }, 180);
+      }
+    }
+  };
+  RJY.portal = portal;
+
+  function maxScroll() { return Math.max(0, document.documentElement.scrollHeight - vh()); }
+  function jump(d, from, fromKeyboard) {
+    var target = document.querySelector(d.href);
+    var y = Math.round(target.getBoundingClientRect().top + window.pageYOffset);
+    if (d.href === '#contact') {
+      // the contact sky is the very end of the page (the painting's full view), unless its words are
+      // taller than the window: then land with its first line just under the navigation
+      var first = target.querySelector('.sec__kicker, .contact__title');
+      var firstY = first ? Math.round(first.getBoundingClientRect().top + window.pageYOffset) - (nav ? nav.offsetHeight : 76) - 24 : y;
+      y = Math.min(maxScroll(), firstY);
+    }
+    // record the history entry before moving, so Back (and the browser's own scroll restoration)
+    // returns to where the visitor was
+    try {
+      history.replaceState(Object.assign({}, history.state || {}, { y: from, star: fromKeyboard ? d.star : null }), '');
+      history.pushState({ y: y, portal: 1 }, '', d.href);
+    } catch (e) {}
+    RJY.scrollNow(y);
+  }
+  function arrive() {
+    cameraFrozen = false;
+    doc.classList.add('is-arriving');
+    doc.classList.remove('is-portal');
+    if (doc.classList.contains('is-still')) {
+      doc.classList.remove('is-portal-still');
+      still.style.transition = 'none'; layoutStill(camera.compute()); void still.offsetWidth; still.style.transition = '';
+    }
+    update();
+  }
+  // While the portal plays, the page does not scroll under it.
+  var SCROLL_KEYS = { ArrowDown: 1, ArrowUp: 1, PageDown: 1, PageUp: 1, Home: 1, End: 1, ' ': 1 };
+  function stop(e) { if (portal.busy && (e.type !== 'keydown' || SCROLL_KEYS[e.key])) e.preventDefault(); }
+  var blocking = false;
+  function blockInput(on) {
+    if (on === blocking) return;
+    blocking = on;
+    ['wheel', 'touchmove', 'keydown'].forEach(function (ev) {
+      if (on) window.addEventListener(ev, stop, { passive: false }); else window.removeEventListener(ev, stop, { passive: false });
+    });
+  }
+  // Back / forward after a portal: return to where the visitor was.
+  window.addEventListener('popstate', function (e) {
+    if (e.state && typeof e.state.y === 'number' && !RJY.route.parse(location.hash)) {
+      RJY.scrollNow(e.state.y);
+      update();   // bring the homepage (and its doorways, hidden while scrolled away) back at once
+      // came back from a doorway opened with the keyboard: focus returns to that star
+      if (e.state.star != null) {
+        var a = document.querySelector('.hotspot[data-star="' + e.state.star + '"]');
+        var give = function () { try { a.focus({ preventScroll: true }); } catch (err) {} return document.activeElement === a; };
+        // (with reduced motion every style change is a tiny transition, so it may only work a frame later)
+        if (a && !a.hidden && !give()) requestAnimationFrame(function () { setTimeout(give, 40); });
+      }
+    }
+  });
+
+  /* ---------- 6. camera: drift through the painting while scrolling ---------- */
   var CAMS = {
     about: { z: 1.3, cx: 0.24, cy: 0.27, dim: 0.25 },
     journey: { z: 1.45, cx: 0.53, cy: 0.29, dim: 0.3 },
@@ -216,6 +387,7 @@
       var y0 = window.pageYOffset;
       this.keys = [{ y: 0, cam: 'hero' }];
       document.querySelectorAll('[data-camera]').forEach(function (s) {
+        if (s.hidden || !s.getClientRects().length) return;   // a hidden section (Memories before any photos)
         var top = s.getBoundingClientRect().top + y0;
         var lead = s.classList.contains('sec--first') ? vh() * 0.25 : 0;   // let the dissolve play before arriving
         camera.keys.push({ y: Math.max(1, top + lead - vh() * 0.15), cam: s.dataset.camera, el: s });
@@ -246,35 +418,41 @@
     }
   };
 
-  /* ---------- 6. scroll & resize loop ---------- */
+  /* ---------- 7. scroll & resize loop ---------- */
   var nav = document.getElementById('nav');
   var heroText = document.querySelector('.hero__text');
+  var hotspotWrap = document.querySelector('.hotspots');
   var sections = Array.prototype.slice.call(document.querySelectorAll('main > section'));
-  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.nav__link'));
   var ticking = false, mouse = [0, 0];
   function onScroll() { if (!ticking) { ticking = true; requestAnimationFrame(update); } }
   function update() {
     ticking = false;
     var y = window.pageYOffset, H = vh();
-    var cam = camera.compute();
+    var cam = cameraFrozen ? camera.current : camera.compute();
     if (painting && glReady) {
-      painting.setView(cam);
-      painting.setScroll(cam.dim);
-      // the painting is mostly hidden behind the veils between hero and contact
-      var veiled = y > H * 1.2 && y < (camera.keys[camera.keys.length - 1].y - H * 0.6);
-      painting.setBudget(veiled ? 0.6 : 1, veiled ? 30 : 60);
-    } else if (doc.classList.contains('is-still')) layoutStill();
+      if (!cameraFrozen) {
+        painting.setView(cam);
+        painting.setScroll(cam.dim);
+        // the painting is mostly hidden behind the veils between hero and contact
+        var veiled = y > H * 1.2 && y < (camera.keys[camera.keys.length - 1].y - H * 0.6);
+        painting.setBudget(veiled ? 0.6 : 1, veiled ? 30 : 60);
+      }
+    } else if (doc.classList.contains('is-still') && !cameraFrozen && !doc.classList.contains('is-portal-still')) layoutStill();
     nav.classList.toggle('is-scrolled', y > 40);
     var f = Math.min(1, y / (H * 0.5));
     heroText.style.opacity = String(1 - f);
     heroText.style.transform = 'translate(' + (-mouse[0] * 6).toFixed(1) + 'px,' + (-(mouse[1] * 4) - y * 0.12).toFixed(1) + 'px)';
     if (RJY.skyLinks) RJY.skyLinks.update(camera.endProgress(), cam);
-    var hs = document.querySelector('.hotspots');
-    hs.style.opacity = y > 30 ? '0' : '1'; hs.style.visibility = y > H * 0.5 ? 'hidden' : '';
+    hotspotWrap.style.opacity = y > 30 ? '0' : '1'; hotspotWrap.style.visibility = y > H * 0.5 ? 'hidden' : '';
+    // which stars respond to the pointer: the portals on the homepage, the contact stars at the end
+    if (painting && glReady) {
+      var heroActive = y < H * 0.3 && !cameraFrozen;
+      painting.setInteractive(heroActive ? hotspots.visibleStars() : (RJY.skyLinks ? RJY.skyLinks.activeStars() : []));
+    }
     // current section in the navigation
     var mid = H * 0.38, current = sections[0];
     sections.forEach(function (s) { var r = s.getBoundingClientRect(); if (r.top <= mid && r.bottom > mid) current = s; });
-    navLinks.forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + current.id)); });
+    document.querySelectorAll('.nav__link').forEach(function (a) { a.setAttribute('aria-current', String(a.getAttribute('href') === '#' + current.id)); });
   }
   window.addEventListener('scroll', onScroll, { passive: true });
   var rz;
@@ -282,7 +460,7 @@
     clearTimeout(rz);
     rz = setTimeout(function () { if (painting && glReady) painting.resize(); camera.measure(); hotspots.place(); update(); }, 120);
   });
-  window.addEventListener('load', function () { camera.measure(); update(); });
+  window.addEventListener('load', function () { camera.measure(); hotspots.place(); update(); });
   if ('ResizeObserver' in window) {
     var lastH = 0;
     new ResizeObserver(function () {
@@ -290,24 +468,33 @@
       if (Math.abs(hgt - lastH) > 2) { lastH = hgt; camera.measure(); onScroll(); }
     }).observe(document.getElementById('main'));
   }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { hotspots.place(); });
 
-  // gentle parallax: the sky drifts a few pixels with the pointer
+  // gentle parallax: the sky drifts a few pixels with the pointer; nearby stars sense the pointer
   if (RJY.finePointer && !RJY.reducedMotion) {
     window.addEventListener('pointermove', function (e) {
+      if (e.pointerType && e.pointerType !== 'mouse' && e.pointerType !== 'pen') return;
+      if (painting) painting.setCursor(e.clientX, e.clientY);
       if (window.pageYOffset > vh()) return;
       mouse = [e.clientX / vw() * 2 - 1, e.clientY / vh() * 2 - 1];
       if (painting) painting.setMouse(mouse[0], mouse[1]);
       onScroll();
     }, { passive: true });
+    document.addEventListener('pointerleave', function () { if (painting) painting.setCursor(null); });
   }
 
-  /* ---------- 7. reveal on scroll ---------- */
+  /* ---------- 8. reveal on scroll ---------- */
+  var rio = null;
   if ('IntersectionObserver' in window && !RJY.reducedMotion) {
-    var rio = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); rio.unobserve(e.target); } }); }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
-    document.querySelectorAll('.reveal').forEach(function (el) { rio.observe(el); });
-  } else document.querySelectorAll('.reveal').forEach(function (el) { el.classList.add('is-in'); });
+    rio = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); rio.unobserve(e.target); } }); }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+  }
+  // also used for content drawn later (photos found after the page loaded)
+  RJY.reveal = function (scope) {
+    (scope || document).querySelectorAll('.reveal:not(.is-in)').forEach(function (el) { if (rio) rio.observe(el); else el.classList.add('is-in'); });
+  };
+  RJY.reveal();
 
-  /* ---------- 8. mobile menu ---------- */
+  /* ---------- 9. mobile menu ---------- */
   var toggle = document.querySelector('.nav__toggle'), menu = document.getElementById('menu');
   function setMenu(open) {
     toggle.setAttribute('aria-expanded', String(open));
@@ -320,7 +507,7 @@
   menu.addEventListener('click', function (e) { if (e.target.closest('a') && toggle.getAttribute('aria-expanded') === 'true') setMenu(false); });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && toggle.getAttribute('aria-expanded') === 'true') { setMenu(false); toggle.focus(); } });
 
-  /* ---------- 9. go ---------- */
+  /* ---------- 10. go ---------- */
   function boot() {
     camera.measure();
     if (location.protocol === 'file:' && !window.RJY_EMBED) {

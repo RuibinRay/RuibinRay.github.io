@@ -25,11 +25,15 @@
   function saveEdits(e) { try { localStorage.setItem(STORE, JSON.stringify(e)); return true; } catch (err) { return false; } }
   function countries() {
     var list = (SITE.travel.countries || []).map(function (c) { return Object.assign({}, c); });
+    // a country with uploaded photos (assets/photos/<CODE>/) counts as visited even before it's listed
+    if (RJY.photos && RJY.photos.ready()) RJY.photos.countriesWithPhotos().forEach(function (code) {
+      if (!list.some(function (x) { return x.code === code; })) list.push({ code: code, status: 'visited', places: [], years: [], photos: [], related: [], fromPhotos: true });
+    });
     var e = edits();
     Object.keys(e).forEach(function (code) {
       var c = list.filter(function (x) { return x.code === code; })[0];
       if (e[code] === 'none') { list = list.filter(function (x) { return x.code !== code; }); return; }
-      if (c) c.status = e[code]; else list.push({ code: code, status: e[code], cities: [], years: [], photos: [], related: [] });
+      if (c) c.status = e[code]; else list.push({ code: code, status: e[code], places: [], years: [], photos: [], related: [] });
     });
     return list;
   }
@@ -241,17 +245,18 @@
   var belowEl;
   function stats() {
     var list = countries(), lit = list.filter(function (c) { return LIT[c.status]; });
-    var conts = {}, cities = {}, photos = 0;
+    var conts = {}, places = {}, photos = 0;
     lit.forEach(function (c) {
       var f = byCode[c.code]; if (f && f.properties.cont) conts[f.properties.cont] = 1;
-      (c.cities || []).forEach(function (x) { cities[c.code + ':' + x.name] = 1; });
+      var P = RJY.places.forCountry(c);
+      P.places.forEach(function (x) { places[c.code + ':' + RJY.places.slug(x.name)] = 1; photos += x.photos.length; });
+      photos += P.photos.length;
     });
-    list.forEach(function (c) { photos += (c.photos || []).length; });
     (SITE.travel.trips || []).forEach(function (t) { photos += (t.photos || []).length; });
     var independent = lit.filter(function (c) { var f = byCode[c.code]; return !f || f.properties.ind; }).length;
     return {
       countries: lit.length, independent: independent, pct: independent / WORLD_COUNT * 100,
-      continents: Object.keys(conts).length, cities: Object.keys(cities).length,
+      continents: Object.keys(conts).length, cities: Object.keys(places).length,
       trips: (SITE.travel.trips || []).length, photos: photos,
       wishlist: list.filter(function (c) { return c.status === 'wishlist'; }).length
     };
@@ -271,11 +276,11 @@
         stat(st.countries, st.countries === 1 ? 'country' : 'countries'),
         stat(pct + '%', 'of the world’s ' + WORLD_COUNT + ' countries'),
         stat(st.continents, st.continents === 1 ? 'continent' : 'continents'),
-        stat(st.cities, st.cities === 1 ? 'city recorded' : 'cities recorded'),
+        stat(st.cities, st.cities === 1 ? 'place recorded' : 'places recorded'),
         stat(st.trips, st.trips === 1 ? 'documented trip' : 'documented trips'),
         stat(st.photos, st.photos === 1 ? 'travel photo' : 'travel photos'),
         stat(st.wishlist, 'on the wishlist')),
-      h('p', { class: 'atlas__note', text: 'This atlas is still being filled in. For now it holds the countries I’ve lived and worked in.' }),
+      h('p', { class: 'atlas__note', text: 'Still being filled in: the places, stories and photos from each country are on their way.' }),
       h('div', { class: 'atlas__visited' },
         h('p', { class: 'links-head', text: 'Lit so far' }),
         h('div', { class: 'connect' }, countries().filter(function (c) { return c.status !== 'none'; }).map(function (c) {
@@ -416,10 +421,7 @@
     if (LIT[st]) {
       if (has(c.headline)) el.appendChild(h('p', { class: 'cp__head', text: c.headline }));
       if (has(c.years)) { el.appendChild(h('h3', { text: 'When' })); el.appendChild(h('p', { text: c.years.join(', ') })); }
-      if (has(c.cities)) {
-        el.appendChild(h('h3', { text: 'Places' }));
-        el.appendChild(h('ul', { class: 'cp__cities' }, c.cities.map(function (x) { return h('li', null, h('b', { text: x.name }), has(x.note) ? h('span', { text: x.note }) : null); })));
-      }
+      el.appendChild(placesBlock(code, c));
       var trips = (SITE.travel.trips || []).filter(function (t) { return t.country === code; });
       if (trips.length) {
         el.appendChild(h('h3', { text: trips.length === 1 ? 'Trip' : 'Trips' }));
@@ -432,13 +434,13 @@
       section(el, 'Highlights', c.highlights, function (v) { return h('ul', { class: 'jd__list' }, v.map(function (x) { return h('li', null, has(x.kind) ? h('b', { text: x.kind + ': ' }) : null, x.text); })); }, 'food, culture, architecture, nature… — highlights');
       section(el, 'What I learned', c.learned, function (v) { return h('p', { text: v }); }, 'what you took away — learned');
       section(el, 'Travelled with', c.companions, function (v) { return h('p', { text: v }); }, null);
-      section(el, 'Photos', c.photos, gallery, 'photos — put files in assets/img/travel/ and list them in photos');
       if (has(c.videos)) { el.appendChild(h('h3', { text: 'Clips' })); c.videos.forEach(function (v) { el.appendChild(h('video', { src: v.src, poster: v.poster || null, controls: true, preload: 'none', playsinline: true, style: { width: '100%', borderRadius: '2px', marginBottom: '8px' } })); }); }
       var conn = RJY.connections(relatedFor(code, c), 'What happened here'); if (conn) el.appendChild(conn);
     } else if (st === 'wishlist') {
       el.appendChild(h('p', { class: 'cp__head', text: 'A destination still ahead.' }));
       section(el, 'Why I want to go', c.reasons, function (v) { return h('p', { text: v }); }, 'your reasons — reasons');
-      section(el, 'Places I hope to see', c.places, function (v) { return h('ul', { class: 'jd__list' }, v.map(function (x) { return h('li', { text: x }); })); }, 'places — places');
+      var hope = c.hopeToSee || (c.places || []).filter(function (x) { return typeof x === 'string'; });
+      section(el, 'Places I hope to see', hope, function (v) { return h('ul', { class: 'jd__list' }, v.map(function (x) { return h('li', { text: x }); })); }, 'places — hopeToSee');
       section(el, 'What I want to do', c.activities, function (v) { return h('ul', { class: 'jd__list' }, v.map(function (x) { return h('li', { text: x }); })); }, 'activities — activities');
       section(el, 'Notes', c.notes, function (v) { return h('p', { text: v }); }, null);
     } else {
@@ -454,11 +456,218 @@
     if (has(val)) { el.appendChild(h('h3', { text: title })); el.appendChild(render(val)); }
     else if (hint) { var p = RJY.ph(hint); if (p) { el.appendChild(h('h3', { text: title })); el.appendChild(p); } }
   }
-  function gallery(list) {
+  function gallery(list, place) {
     return h('div', { class: 'cp__gallery' }, list.map(function (p) {
-      return h('button', { type: 'button', 'aria-label': 'Open photo: ' + (p.caption || p.alt || ''), onclick: function () { RJY.lightbox(p); } }, h('img', { src: p.src, alt: p.alt || '', loading: 'lazy' }));
+      var label = p.caption || p.alt || (place ? 'Photo from ' + place : 'Photo');
+      var b = h('button', { type: 'button', 'aria-label': 'Open photo: ' + label, onclick: function () {
+        var ok = list.filter(function (q) { return !q.broken; });
+        RJY.lightbox(p, ok, ok.indexOf(p));
+      } }, h('img', { src: p.src, alt: p.alt || label, loading: 'lazy', decoding: 'async', onerror: function () { p.broken = true; b.hidden = true; } }));
+      return b;
     }));
   }
+
+  /* ---------- places: provinces/states, cities and their photos ----------
+     The block appears at once; the province/state map and the grouping fill in as soon as the
+     country's regions file (data/regions/<CODE>.js) has loaded. */
+  var currentPlaces = null;
+  function placesBlock(code, c) {
+    var mapBox = h('div', { class: 'cp__map' });
+    var list = h('div', { class: 'cp__places' });
+    var wrap = h('div', { class: 'cp__places-wrap' }, mapBox, list);
+    function fill(R) {
+      if (!wrap.isConnected) return;
+      var data = RJY.places.forCountry(c);
+      var resolved = data.places.map(function (p) { return { p: p, r: RJY.regions.resolve(R, p) }; });
+      // a photo folder takes the proper spelling of the city or province it matches
+      resolved.forEach(function (x) {
+        if (!x.p.discovered) return;
+        if (x.r.city) x.p.name = x.r.city.name; else if (x.r.isRegion && x.r.region) x.p.name = x.r.region.name;
+      });
+      // the province/state map appears once there is a place or photo to show on it
+      if (resolved.length || data.photos.length || RJY.draft) drawMiniMap(mapBox, code, R, resolved, list); else mapBox.innerHTML = '';
+      renderPlaces(list, code, resolved, data.photos);
+    }
+    function load() { RJY.regions.load(code).then(fill, function () { fill(null); }); }
+    wrap._refresh = load;
+    currentPlaces = wrap;
+    load();
+    return wrap;
+  }
+
+  // "the United States", "the Netherlands"… in running text
+  function inText(code) {
+    var n = nameOf(code);
+    return /^(United |Dominican Republic|Central African Republic|Czech Republic|Philippines|Netherlands|Bahamas|Gambia|Maldives|Comoros|Seychelles|.+ Islands$)/.test(n) ? 'the ' + n : n;
+  }
+
+  function renderPlaces(list, code, resolved, countryPhotos) {
+    list.innerHTML = '';
+    var total = countryPhotos.length, cname = inText(code), plain = nameOf(code);
+    resolved.forEach(function (x) { total += x.p.photos.length; });
+    if (!resolved.length && !countryPhotos.length) {
+      list.appendChild(h('p', { class: 'cp__soon', text: 'The places and photos from ' + cname + ' are on their way.' }));
+      var ph0 = RJY.ph('the provinces/states and cities you visited: list them under places in data/travel.js, or upload photos into a folder named after each city in ' + RJY.places.folderFor(code));
+      if (ph0) list.appendChild(ph0);
+      return;
+    }
+    list.appendChild(h('h3', { text: 'Where I’ve been' }));
+    // group by province/state, in the order they first appear; anything unmatched goes last
+    var groups = [], byKey = {};
+    resolved.forEach(function (x) {
+      var key = x.r.region ? 'r' + x.r.region.i : 'other';
+      var g = byKey[key];
+      if (!g) { g = byKey[key] = { key: key, region: x.r.region, items: [] }; groups.push(g); }
+      g.items.push(x);
+    });
+    groups.sort(function (a, b) { return (a.key === 'other') - (b.key === 'other'); });
+    groups.forEach(function (g) {
+      var sec = h('section', { class: 'cp__region', 'data-key': g.key });
+      var regionName = g.region ? g.region.name : (groups.length > 1 ? 'Other places' : '');
+      if (regionName) sec.appendChild(h('h4', { class: 'cp__region-name' }, regionName, g.region && g.region.kind ? h('span', { class: 'cp__region-kind', text: g.region.kind }) : null));
+      g.items.forEach(function (x) {
+        // a place that is the province/state itself (Seoul, Beijing…) sits right under its heading
+        var p = x.p, own = g.region && (x.r.isRegion || (g.items.length === 1 && RJY.places.norm(p.name) === RJY.places.norm(g.region.name)));
+        var art = h('article', { class: 'cp__place' + (own ? ' is-region' : ''), 'data-place': RJY.places.slug(p.name) });
+        if (!own) art.appendChild(h('h5', { class: 'cp__place-name' }, h('span', { class: 'cp__place-star', html: RJY.starIcon() }), p.name));
+        if (has(p.note)) art.appendChild(h('p', { class: 'cp__place-note', text: p.note }));
+        if (has(p.story)) art.appendChild(h('p', { class: 'cp__place-story', text: p.story }));
+        if (p.photos.length) art.appendChild(gallery(p.photos.map(function (ph) { return Object.assign({ place: p.name + ', ' + plain }, ph); }), p.name));
+        else { var ph1 = RJY.ph('photos of ' + p.name + ': upload them to ' + RJY.places.folderFor(code, p)); if (ph1) art.appendChild(ph1); }
+        sec.appendChild(art);
+      });
+      list.appendChild(sec);
+    });
+    if (countryPhotos.length) {
+      list.appendChild(h('section', { class: 'cp__region', 'data-key': 'country' },
+        h('h4', { class: 'cp__region-name', text: 'Around ' + cname }),
+        gallery(countryPhotos.map(function (ph) { return Object.assign({ place: plain }, ph); }), plain)));
+    }
+    if (!total) list.appendChild(h('p', { class: 'cp__soon', text: 'Photos from ' + cname + ' are on their way.' }));
+    var ph2 = RJY.ph('another place: upload its photos into a folder named after the city or province (lowercase, dashes for spaces) inside ' + RJY.places.folderFor(code) + ' — it appears here and on the map by itself');
+    if (ph2) list.appendChild(ph2);
+  }
+
+  // Scroll the drawer to a place and make it glow for a moment.
+  function focusPlace(list, key, placeSlug) {
+    var target = (placeSlug && list.querySelector('[data-place="' + placeSlug + '"]')) || list.querySelector('[data-key="' + key + '"]');
+    if (!target) return;
+    target.scrollIntoView({ behavior: RJY.reducedMotion ? 'auto' : 'smooth', block: 'center' });
+    target.classList.remove('is-flash'); void target.offsetWidth; target.classList.add('is-flash');
+  }
+
+  // The parts of a country to frame: its main landmass and nearby islands (not far-flung territories).
+  function mainLand(fc) {
+    var parts = [];
+    fc.features.forEach(function (f) {
+      var g = f.geometry; if (!g) return;
+      var polys = g.type === 'Polygon' ? [g.coordinates] : g.type === 'MultiPolygon' ? g.coordinates : [];
+      polys.forEach(function (pc) {
+        var poly = { type: 'Polygon', coordinates: pc }, a = G.geoArea(poly);
+        if (a > 0 && a < 2 * Math.PI) parts.push({ poly: poly, a: a, c: G.geoCentroid(poly) });
+      });
+    });
+    if (!parts.length) return fc;
+    var total = parts.reduce(function (t, p) { return t + p.a; }, 0);
+    var big = parts.filter(function (p) { return p.a >= total * 0.01; });
+    var x = 0, y = 0, z = 0;
+    big.forEach(function (p) { var l = p.c[0] * Math.PI / 180, t = p.c[1] * Math.PI / 180; x += p.a * Math.cos(t) * Math.cos(l); y += p.a * Math.cos(t) * Math.sin(l); z += p.a * Math.sin(t); });
+    var cen = [Math.atan2(y, x) * 180 / Math.PI, Math.atan2(z, Math.sqrt(x * x + y * y)) * 180 / Math.PI];
+    var lim = 3 * Math.sqrt(total);
+    var keep = parts.filter(function (p) { return G.geoDistance(p.c, cen) <= (p.a >= total * 0.01 ? lim : lim * 0.5); });
+    return { type: 'FeatureCollection', features: (keep.length ? keep : parts).map(function (p) { return { type: 'Feature', properties: {}, geometry: p.poly }; }) };
+  }
+
+  var STAR = 'M0-8.5l1.6 5.6 5.6 1.3-5.6 1.3L0 6.3l-1.6-6.6-5.6-1.3 5.6-1.3z';
+  function drawMiniMap(box, code, R, resolved, list) {
+    box.innerHTML = '';
+    var own = byCode[code];
+    var fc = R ? R.fc : { type: 'FeatureCollection', features: own ? [own] : [] };
+    if (!fc.features.length) return;
+    var w = Math.max(240, Math.round(box.clientWidth || 420));
+    var usa = code === 'USA' && !!R;
+    var fit = usa ? fc : mainLand(fc), proj;
+    if (usa) proj = G.geoAlbersUsa();
+    else { var cen = G.geoCentroid(fit); proj = G.geoAzimuthalEqualArea().rotate([-cen[0], -cen[1]]).clipAngle(90); }
+    proj.fitWidth(w - 24, fit);
+    var b = G.geoPath(proj).bounds(fit);
+    var hh = Math.max(170, Math.min(Math.round(w * 0.86), Math.ceil(b[1][1] - b[0][1]) + 26));
+    proj.fitExtent([[12, 12], [w - 12, hh - 12]], fit);
+    if (!usa) proj.clipExtent([[0, 0], [w, hh]]);
+    var pth = G.geoPath(proj);
+
+    var lit = {}, stars = [], labels = [];
+    resolved.forEach(function (x) {
+      if (x.r.region) lit[x.r.region.i] = true;
+      if (x.r.coords) {
+        var pt = proj(x.r.coords);
+        if (pt) stars.push({ x: pt[0], y: pt[1], name: x.p.name, slug: RJY.places.slug(x.p.name), key: x.r.region ? 'r' + x.r.region.i : 'other' });
+      } else if (x.r.isRegion && x.r.region) {
+        var cp = pth.centroid(x.r.region.feature);
+        if (cp && isFinite(cp[0])) labels.push({ x: cp[0], y: cp[1], name: x.r.region.name, key: 'r' + x.r.region.i, region: true });
+      }
+    });
+    var litNames = resolved.map(function (x) { return x.p.name + (x.r.region && !x.r.isRegion ? ' (' + x.r.region.name + ')' : ''); });
+    var svg = RJY.s('svg', { class: 'cpmap', viewBox: '0 0 ' + w + ' ' + hh, width: w, height: hh, role: 'img',
+      'aria-label': 'Map of ' + inText(code) + (litNames.length ? '. Places I’ve been: ' + litNames.join(', ') + '.' : '.') });
+    svg.appendChild(RJY.s('defs', null, RJY.s('filter', { id: 'cpGlow', x: '-50%', y: '-50%', width: '200%', height: '200%' },
+      RJY.s('feGaussianBlur', { stdDeviation: '2.2', result: 'b' }), RJY.s('feMerge', null, RJY.s('feMergeNode', { in: 'b' }), RJY.s('feMergeNode', { in: 'SourceGraphic' })))));
+    if (!usa) {
+      var g0 = RJY.s('g', { class: 'cpmap__world' });
+      features.forEach(function (f) { if (f.id === code) return; var d = pth(f); if (d) g0.appendChild(RJY.s('path', { d: d })); });
+      svg.appendChild(g0);
+    }
+    var g1 = RJY.s('g', { class: 'cpmap__regions' }), litEls = [];
+    fc.features.forEach(function (f, i) {
+      var d = pth(f); if (!d) return;
+      var on = R ? !!lit[i] : resolved.length > 0;
+      var el = RJY.s('path', { d: d, class: on ? 'is-lit' : '' });
+      el.appendChild(RJY.s('title', { text: R ? R.regions[i].name : nameOf(code) }));
+      if (on && R) el.addEventListener('click', function () { focusPlace(list, 'r' + i); });
+      if (on) litEls.push(el); else g1.appendChild(el);
+    });
+    litEls.forEach(function (el) { g1.appendChild(el); });   // lit provinces on top so their glow shows
+    svg.appendChild(g1);
+    // labels: provinces/states visited as a whole, then cities (skipping any that would collide)
+    var boxes = [];
+    function free(r) { return r.x >= 2 && r.x + r.w <= w - 2 && r.y >= 2 && r.y + r.h <= hh - 2 && !boxes.some(function (o) { return r.x < o.x + o.w && r.x + r.w > o.x && r.y < o.y + o.h && r.y + r.h > o.y; }); }
+    var g2 = RJY.s('g', { class: 'cpmap__labels' });
+    stars.forEach(function (st) { boxes.push({ x: st.x - 8, y: st.y - 8, w: 16, h: 16 }); });
+    labels.forEach(function (l) {
+      var tw = l.name.length * 6.6 + 4, r = { x: l.x - tw / 2, y: l.y - 8, w: tw, h: 15 };
+      if (!free(r)) return;
+      boxes.push(r);
+      g2.appendChild(RJY.s('text', { class: 'is-region', x: l.x, y: l.y + 4, 'text-anchor': 'middle', text: l.name }));
+    });
+    var g3 = RJY.s('g', { class: 'cpmap__stars' });
+    stars.forEach(function (st) {
+      var gg = RJY.s('g', { class: 'cpmap__star', transform: 'translate(' + st.x.toFixed(1) + ' ' + st.y.toFixed(1) + ')' });
+      gg.appendChild(RJY.s('circle', { class: 'halo', r: 11 }));
+      gg.appendChild(RJY.s('path', { d: STAR }));
+      gg.appendChild(RJY.s('title', { text: st.name }));
+      gg.addEventListener('click', function () { focusPlace(list, st.key, st.slug); });
+      g3.appendChild(gg);
+      var tw = st.name.length * 6.4 + 4;
+      var spots = [{ x: st.x + 11, y: st.y - 7, a: 'start' }, { x: st.x - 11 - tw, y: st.y - 7, a: 'end' }, { x: st.x - tw / 2, y: st.y + 10, a: 'middle' }, { x: st.x - tw / 2, y: st.y - 24, a: 'middle' }];
+      for (var k = 0; k < spots.length; k++) {
+        var sp = spots[k], r = { x: sp.x, y: sp.y, w: tw, h: 14 };
+        if (!free(r)) continue;
+        boxes.push(r);
+        g2.appendChild(RJY.s('text', { x: sp.a === 'start' ? sp.x : sp.a === 'end' ? sp.x + tw : sp.x + tw / 2, y: sp.y + 11, 'text-anchor': sp.a, text: st.name }));
+        break;
+      }
+    });
+    svg.appendChild(g3);
+    svg.appendChild(g2);
+    box.appendChild(svg);
+  }
+
+  // New photos found in the repository: refresh the map, the numbers and an open country.
+  document.addEventListener('rjy:photos', function () {
+    if (!ready) return;
+    paint(); renderBelow();
+    if (currentPlaces && currentPlaces.isConnected && currentPlaces._refresh) currentPlaces._refresh();
+  });
 
   /* ---------- draft-mode editor ---------- */
   function editor(code, st) {
@@ -486,7 +695,7 @@
   }
 
   function exportFile() {
-    var data = { countries: countries(), trips: SITE.travel.trips || [] };
+    var data = { countries: countries().map(function (c) { var o = Object.assign({}, c); delete o.fromPhotos; return o; }), trips: SITE.travel.trips || [] };
     var head = '/*\n * data/travel.js — exported from the atlas editor on ' + new Date().toISOString().slice(0, 10) + '.\n * Replace data/travel.js in your repository with this file to publish the changes.\n * Field guide: see README.md → "Updating the atlas".\n */\nwindow.SITE = window.SITE || {};\n\nSITE.travel = ';
     var blob = new Blob([head + JSON.stringify(data, null, 2) + ';\n'], { type: 'text/javascript' });
     var a = h('a', { href: URL.createObjectURL(blob), download: 'travel.js' });

@@ -12,15 +12,15 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 
 | Section | What it is | Edit it in |
 |---|---|---|
-| Home | The painting, animated in WebGL. The sky flows along its own brushstrokes, the ocean rolls on its own, and the figure and driftwood stay still. Stars in the sky are shortcuts to each section. | `data/site.js` (name, tagline) |
+| Home | The painting, animated in WebGL. The sky flows along its own brushstrokes, the ocean rolls on its own, and the figure and driftwood stay still. Seven painted stars are doorways: point at one and it swells, swirls and glows; click it to fly through it into a section. | `data/site.js` (name, tagline); the doorways are `hotspots` in `assets/js/main.js` |
 | About: *Beyond the Horizon* | Your story, the at-a-glance facts, education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` |
 | Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year | `data/journey.js` |
-| World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, country chapters, statistics, a year filter, a replay and milestones | `data/travel.js` |
-| Memories | A photo gallery. **It stays hidden until you add photos.** | `data/gallery.js` and photos in `data/travel.js` |
+| World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a map of its provinces/states with the cities you've been to, and the photos from each place. | `data/travel.js`, photos in `assets/photos/` |
+| Memories | Every photo on the site in one gallery. **It stays hidden until there's at least one photo.** | `assets/photos/`, `data/gallery.js`, `data/travel.js` |
 | Projects: *My Constellations* | Your work as constellations, each star opening a full case study | `data/work.js` |
 | Skills: *My Palette* | Skills as paint colours, each linked to the work where it shows. Also languages, certifications and coursework. | `data/palette.js`, `data/site.js` |
 | *How it all connects* | Every place, milestone, project and skill as one star chart. The lines come from the `related` links in your data. | the `related` fields |
-| Contact: *Under the Same Sky* | Back to the full painting. On desktop your links are pinned to painted stars. | `data/site.js` → `links` |
+| Contact: *Under the Same Sky* | Back to the full painting. Your email and phone numbers sit beside the text; Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
 
 Everything links to everything: a project opens the country where it happened, a country opens the jobs you did there, a skill opens the projects that used it. That's the constellation.
 
@@ -38,13 +38,15 @@ Three rules the site follows:
 
 ### Things still worth adding (open `?draft` to see them all)
 
-- [ ] **Your email**: `data/site.js` → `links.email`. It becomes a star in the contact sky.
+- [ ] **Your US phone number**: `data/site.js` → `links.phones`. The US number sent had only 9 digits after +1, so it's left off until it's complete.
+- [ ] **The cities and provinces/states you visited** in Canada, South Korea, China and the US: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
+- [ ] **Photos** from each country: see *Adding photos*.
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.
 - [ ] **"Problems I enjoy solving"** and **"What I hope to build"**: `data/site.js` → `about.blocks`.
 - [ ] **Case-study details**: objective, approach, insights, results, images and links for each project in `data/work.js`.
 - [ ] **Evidence for the Hult Future Leaders Challenge**: `awards[0].evidence` in `data/site.js`.
-- [ ] **Countries you've visited, your wishlist and your travel stories**: see *Updating the atlas* below.
+- [ ] **Your wishlist and travel stories**: see *Updating the atlas* below.
 - [ ] **Credit for the painting**: `meta.paintingCredit` in `data/site.js`.
 
 ### Linking things together
@@ -94,20 +96,25 @@ Copy an entry in `data/journey.js`. `at: 'YYYY-MM'` places the star; `when` is t
 **`countries`** is one entry per country you want to mark. Anything not listed stays undiscovered.
 
 ```js
-{ code: 'JPN', status: 'visited', years: [2027],
-  cities: [ { name: 'Kyoto', note: 'Temples at dawn' } ],
+{ code: 'KOR', status: 'visited', years: [2024],
+  places: [
+    { name: 'Seoul', note: 'One line about it' },
+    { name: 'Busan' },
+    { name: 'Jeju', type: 'region' }              // a whole province/state rather than a city
+  ],
   story: 'Your words…', highlights: [ { kind: 'Food', text: '…' } ], learned: '…',
-  photos: [ { src: 'assets/img/travel/kyoto.jpg', alt: '…', caption: '…', date: '2027-04', place: 'Kyoto' } ],
   related: [] }
 ```
 
 - `status`: `home`, `visited`, `current` (an animated highlight) or `wishlist`.
-- Wishlist countries use `reasons`, `places`, `activities` and `notes` instead.
-- Codes are ISO 3166-1 alpha-3: `CRI` Costa Rica, `CHN` China, `USA`, `JPN`, `MEX`, `ESP`, `FRA`, `GBR`, `SAU`, `AUS`… ([full list](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)).
+- `places`: cities and provinces/states, in English or the local spelling. The country's chapter maps them: the province/state lights up gold and each city gets a star. Add `region: 'Liaoning'` to tell apart places with the same name, or `coords: [lat, lon]` for a spot the map doesn't know (a beach, a park).
+- Photos for a place go in `assets/photos/<CODE>/<place>/`. They appear under that place without editing this file (see *Adding photos*).
+- Wishlist countries use `reasons`, `hopeToSee`, `activities` and `notes` instead.
+- Codes are ISO 3166-1 alpha-3: `CRI` Costa Rica, `CHN` China, `USA`, `CAN` Canada, `KOR` South Korea, `JPN`, `MEX`, `ESP`, `FRA`, `GBR`… ([full list](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)).
 
 **`trips`** are dated journeys. They drive the year filter and the replay, and a country can have many of them.
 
-The statistics (countries, % of the world, continents, cities, trips, photos, wishlist) and the milestones ("First country", "Two continents", "Five countries"…) are **calculated from this file**. Nothing is typed in by hand.
+The statistics (countries, % of the world, continents, places, trips, photos, wishlist) and the milestones ("First country", "Two continents", "Five countries"…) are **calculated from this file**. Nothing is typed in by hand.
 
 ### The in-browser editor (draft view)
 
@@ -122,14 +129,23 @@ Edits made in the browser are saved **only in that browser** (localStorage). The
 
 ---
 
-## Photos (Memories)
+## Adding photos
 
-- Gallery photos go in `assets/img/gallery/`, listed in `data/gallery.js` with a category, place, date and optional story.
-- Travel photos listed in `data/travel.js` appear in the country's chapter **and** in the gallery automatically.
-- Set `public: false` on a photo to keep it in the file but off the site.
-- Keep images around 1600 px on the long side and under ~400 KB (JPG or WebP). [Squoosh](https://squoosh.app) does this in the browser.
+Upload them to the repository; no code to edit.
 
-The Memories section and its menu link only appear once there's at least one public photo.
+```
+assets/photos/<COUNTRY>/<place>/<photo>.jpg     e.g. assets/photos/CHN/shenyang/2026-07-12 Zhongjie at night.jpg
+assets/photos/<COUNTRY>/<photo>.jpg             the country in general ("Around China")
+```
+
+- On github.com, open `assets/photos`, click into the country (or place) folder, then **Add file → Upload files**. For a new place, drag in a whole folder named after it, like `seoul`.
+- A photo shows under its city or province/state in the country's chapter on the World map **and** in the Memories gallery. A new place folder also lights up that place on the country's map.
+- The file name becomes the caption (`2026-07-12 Zhongjie at night.jpg` → "Zhongjie at night", Jul 2026).
+- Use JPG, PNG or WebP around 2000 px and under ~500 KB (export iPhone HEIC photos as JPEG first). Remove the GPS location from photos you don't want to reveal it: the repository is public.
+
+[`assets/photos/README.md`](assets/photos/README.md) has the details. The site finds new photos by asking GitHub's API for the list of files (GitHub Pages can't list folders by itself). If GitHub doesn't answer, it shows the photos it already knows about.
+
+Photos can also be listed by hand, with a longer caption or a story: in `data/gallery.js` (category, place, date, story) or under a place in `data/travel.js`. Set `public: false` on a listed photo to keep it off the site. The Memories section and its menu link only appear once there's at least one public photo.
 
 ---
 
@@ -186,7 +202,7 @@ Never commit passwords, API keys or anything private. Everything in this reposit
 - **Sky:** a *flow map* (`assets/painting/flow-sky.png`) stores, for every pixel, the direction of the painted brushstrokes. It was measured from the artwork with a colour structure tensor and then oriented to follow the two great spirals, the halos around each star and the moon, and the flowing bands. The shader slides the paint along those directions in two overlapping phases, so strokes stream past each other continuously. A contrast-preserving blend keeps the impasto texture crisp. The central spiral moves slowest and the outer currents faster, each region slightly out of step with the others. The two spirals also breathe: they wind and unwind very slowly.
 - **Ocean:** its own flow map follows the foam and wave strokes, plus swells that roll toward you and golden glints under the bright star and the moon.
 - **Still things:** the figure, driftwood, rocks, headland and horizon are masked out and never move. Only a faint moonlight shimmer touches the wood.
-- **Stars and the moon** stay exactly where they are painted and pulse, each at its own pace.
+- **Stars and the moon** stay exactly where they are painted. Each pulses at its own pace and now and then shimmers. A doorway star senses the pointer: it swells about 12%, its strokes swirl, a golden halo opens and the sky around it bends toward it. Clicking it flies the camera through the star into its section in about a second. The opening differs by section: the strokes part for World, a star-scattered iris for Experience and Projects, a softer dissolve for About.
 - Moving the mouse shifts the sky a few pixels against the foreground for depth. Scrolling glides a "camera" through the painting behind each section.
 - **Fallbacks:** with *Reduce motion* turned on, the painting is shown as a single still frame. Without WebGL, or with software-only graphics, or if the device can't keep up even at reduced resolution, the still image is shown with soft CSS star glows. The resolution adapts automatically to keep the animation smooth.
 
@@ -200,10 +216,10 @@ The artwork was upscaled 4× with Real-ESRGAN, so it stays sharp on large screen
 
 ## Accessibility and performance
 
-- Full keyboard navigation with visible focus outlines and a skip link. Timeline stars work with arrow keys. The star chart is a single tab stop, moved with the arrow keys and opened with Enter. Every country can be reached through the map search.
-- Respects *Reduce motion*. Dialogs trap focus and close with Esc.
-- A first visit loads about 1.5 MB on desktop and about 1.1 MB on phones. The map (~320 KB) loads only as you approach it.
-- No external requests at all: fonts, map data and libraries are all self-hosted.
+- Full keyboard navigation with visible focus outlines and a skip link. The homepage star doorways are links: Tab to one and press Enter to travel; Back returns you to where you were. Timeline stars work with arrow keys. The star chart is a single tab stop, moved with the arrow keys and opened with Enter. Every country can be reached through the map search.
+- Respects *Reduce motion*: the painting holds still and a star doorway becomes a short fade. Dialogs trap focus and close with Esc.
+- A first visit loads about 1.5 MB on desktop and about 1.1 MB on phones. The world map (~320 KB) loads only as you approach it, and a country's provinces/states (8–95 KB) only when that country is opened.
+- Fonts, map data and libraries are all self-hosted. The one outside request goes to GitHub's API for the list of uploaded photos, at most once every 10 minutes per visitor (GitHub already hosts the site). No trackers, no cookies.
 
 ---
 
@@ -217,22 +233,24 @@ data/                   ← your content
   journey.js              The Journey So Far
   work.js                 projects and case studies
   palette.js              skills and tools
-  travel.js               the atlas
-  gallery.js              photos (optional)
+  travel.js               the atlas: countries, places, trips
+  gallery.js              hand-listed photos (optional)
   world.js                country borders (generated, don't edit)
+  regions/                provinces/states and cities of each country (generated, don't edit)
 assets/
+  photos/                 ← your photos: <COUNTRY>/<place>/  (see its README)
   css/site.css            all styles
-  js/                     painting.js · main.js · ui.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
+  js/                     painting.js · main.js · ui.js · places.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
   painting/               the artwork in three sizes, motion maps, embedded.js (local preview)
   fonts/ flags/ img/ vendor/
-tools/                  build_flow_maps.py, make_embedded.py, source/painting-original.jpg
+tools/                  build_flow_maps.py, make_embedded.py, build_regions.mjs, source/painting-original.jpg
 site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 ```
 
 ## Credits
 
 - Fonts: [Fraunces](https://github.com/undercasetype/Fraunces) and [Instrument Sans](https://github.com/Instrument/instrument-sans), SIL Open Font License (licences in `assets/fonts/`)
-- Country borders: [Natural Earth](https://www.naturalearthdata.com/) (public domain) via [world-atlas](https://github.com/topojson/world-atlas)
+- Country borders: [Natural Earth](https://www.naturalearthdata.com/) (public domain) via [world-atlas](https://github.com/topojson/world-atlas); provinces/states and cities: Natural Earth 1:10m admin-1 and populated places (public domain)
 - Map code: [d3-geo, d3-zoom](https://d3js.org/) and [topojson-client](https://github.com/topojson/topojson-client), ISC licence (`assets/vendor/LICENSES.txt`)
 - Flags: [flag-icons](https://github.com/lipis/flag-icons), MIT licence
 - Homepage painting: a Starry Night ocean scene after Vincent van Gogh

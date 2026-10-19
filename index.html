@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="assets/css/site.css">
   <script>document.documentElement.className = 'js';</script>
   <script type="application/ld+json">
-  {"@context":"https://schema.org","@type":"Person","name":"Ruibin Jin Yao","alternateName":["Ray","Edwin Ruibin Jin Yao"],"url":"https://ruibinray.github.io/","alumniOf":[{"@type":"CollegeOrUniversity","name":"Hult International Business School"},{"@type":"School","name":"Lincoln School, Costa Rica"}],"knowsLanguage":["en","es","zh"],"sameAs":["https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239","https://github.com/RuibinRay"]}
+  {"@context":"https://schema.org","@type":"Person","name":"Ruibin Jin Yao","alternateName":["Ray","Edwin Ruibin Jin Yao"],"url":"https://ruibinray.github.io/","alumniOf":[{"@type":"CollegeOrUniversity","name":"Hult International Business School"},{"@type":"School","name":"Lincoln School, Costa Rica"}],"knowsLanguage":["en","es","zh"],"email":"mailto:ruibinjinyao@gmail.com","sameAs":["https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239","https://github.com/RuibinRay","https://www.instagram.com/ruibin.jin/","https://x.com/RuibinJin","https://www.facebook.com/ruibin.jin.9"]}
   </script>
 </head>
 <body>
@@ -139,8 +139,8 @@
       </div>
     </section>
 
-    <!-- MEMORIES — photo gallery. Hidden on the public site until data/gallery.js or data/travel.js has photos -->
-    <section id="memories" class="sec sec--memories" aria-labelledby="memories-title" data-camera="memories">
+    <!-- MEMORIES — photo gallery. Hidden until there is a photo: in assets/photos/, data/gallery.js or data/travel.js -->
+    <section id="memories" class="sec sec--memories" aria-labelledby="memories-title" data-camera="memories" hidden>
       <div class="sec__inner">
         <header class="sec__head reveal">
           <p class="sec__kicker" data-kicker>Memories</p>
@@ -213,8 +213,11 @@
 
   <noscript>
     <div style="position:relative;z-index:5;padding:40px 24px;background:#050a2e;color:#f3eadb;font-family:Georgia,serif">
-      <p>Ruibin (Ray) Jin Yao — BBA in Finance &amp; Business Analytics, Hult International Business School, Boston. Find me on
-      <a href="https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239">LinkedIn</a> and <a href="https://github.com/RuibinRay">GitHub</a>.
+      <p>Ruibin (Ray) Jin Yao — BBA in Finance &amp; Business Analytics, Hult International Business School, Boston.
+      Email <a href="mailto:ruibinjinyao@gmail.com">ruibinjinyao@gmail.com</a>, or find me on
+      <a href="https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239">LinkedIn</a>, <a href="https://github.com/RuibinRay">GitHub</a>,
+      <a href="https://www.instagram.com/ruibin.jin/">Instagram</a>, <a href="https://x.com/RuibinJin">X</a> and
+      <a href="https://www.facebook.com/ruibin.jin.9">Facebook</a>.
       This site needs JavaScript for the painting, the map and the timeline.</p>
     </div>
   </noscript>
@@ -229,6 +232,7 @@
   <!-- Code -->
   <script src="assets/js/painting.js"></script>
   <script src="assets/js/ui.js"></script>
+  <script src="assets/js/places.js"></script>
   <script src="assets/js/sections.js"></script>
   <script src="assets/js/journey.js"></script>
   <script src="assets/js/work.js"></script>

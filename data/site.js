@@ -31,9 +31,17 @@ SITE.profile = {
 };
 
 SITE.links = {
-  email: '',                                   // e.g. 'name@example.com' — leave empty to hide
-  linkedin: 'https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239',
+  email: 'ruibinjinyao@gmail.com',
+  phones: [                                    // shown beside the email; leave a number empty to hide it
+    { number: '', label: 'United States' },    // e.g. '+1 617 555 0123'
+    { number: '+506 7297 1174', label: 'Costa Rica' }
+  ],
+  // The five stars in the contact sky (on the painted stars on desktop, drawn under the text on phones)
+  instagram: 'https://www.instagram.com/ruibin.jin/',
+  x: 'https://x.com/RuibinJin',
+  facebook: 'https://www.facebook.com/ruibin.jin.9',
   github: 'https://github.com/RuibinRay',
+  linkedin: 'https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239',
   resume: '',                                  // e.g. 'assets/docs/resume.pdf' after you add the file
   other: [                                     // more profiles: { label: 'Medium', url: 'https://…' }
   ]
@@ -41,6 +49,8 @@ SITE.links = {
 
 SITE.meta = {
   siteUrl: 'https://ruibinray.github.io/',
+  repo: 'RuibinRay/RuibinRay.github.io',      // where photos uploaded to assets/photos/ are found
+  branch: 'main',
   year: 2026,
   paintingCredit: ''                           // who painted the homepage artwork, e.g. 'Painting by …' — leave empty to hide
 };
