@@ -64,6 +64,8 @@
       try { localStorage.setItem(MOTION_KEY, p ? 'paused' : 'playing'); } catch (e) {}
       if (painting && glReady) { if (p) painting.stop(); else painting.start(); }
       this.render();
+      try { document.dispatchEvent(new CustomEvent('rjy:motion', { detail: { paused: p } })); } catch (e) {}
+      if (typeof update === 'function') update();   // the camera holds still (or moves again) at once
     }
   };
   RJY.motion = motion;
@@ -126,6 +128,13 @@
       stillBase = base;
     }
     still.style.transform = 'translate(' + m[0].toFixed(1) + 'px,' + m[1].toFixed(1) + 'px) scale(' + (m[2] / base[2]).toFixed(4) + ')';
+    // the section's colour mood, as closely as a CSS filter allows
+    var v = view || camera.current;
+    if (v && v.tint) {
+      var warm = (v.tint[0] - v.tint[2]) * 0.6, light = (v.tint[0] + v.tint[1] + v.tint[2]) / 3;
+      still.style.filter = 'saturate(' + v.sat.toFixed(3) + ') brightness(' + (light * (1 - 0.38 * (v.dim || 0))).toFixed(3) + ')' +
+        (warm > 0.01 ? ' sepia(' + Math.min(0.4, warm).toFixed(3) + ')' : warm < -0.01 ? ' hue-rotate(' + (warm * 40).toFixed(1) + 'deg)' : '');
+    }
     stage.querySelectorAll('.stage__glows span').forEach(function (g) {
       var r = +g.dataset.r * m[2] * 2.2;
       g.style.left = (m[0] + g.dataset.x * m[2]) + 'px'; g.style.top = (m[1] + g.dataset.y * m[3]) + 'px';
@@ -192,7 +201,7 @@
     });
     // reduced motion: the painting still lives, but calmly (slower flow, nothing zooms or spins)
     painting.setGentle(reduced);
-    painting.setView(camera.compute());
+    painting.setCamera(camera.compute(), true);
     var slowStart = setTimeout(function () { startIntro(reduced ? 0 : 1.2); }, 2600);
     var fallbackTimer = setTimeout(function () { if (!glReady) useStill(); }, 9000);
     painting.init().then(function () {
@@ -447,17 +456,22 @@
     }
   });
 
-  /* ---------- 6. camera: drift through the painting while scrolling ---------- */
+  /* ---------- 6. camera: travel into the painting while scrolling ----------
+     Each section has a place in the painting, a zoom that deepens as the page goes on, and a colour
+     mood (tint, saturation, how strongly the paint flows, how brightly the stars glow). Between two
+     sections everything blends with the scroll; at Contact the camera pulls back to the full view. */
   var CAMS = {
-    about: { z: 1.3, cx: 0.24, cy: 0.27, dim: 0.25 },
-    journey: { z: 1.45, cx: 0.53, cy: 0.29, dim: 0.3 },
-    world: { z: 1.25, cx: 0.62, cy: 0.74, dim: 0.3 },
-    memories: { z: 1.35, cx: 0.32, cy: 0.62, dim: 0.3 },
-    work: { z: 1.5, cx: 0.72, cy: 0.35, dim: 0.2 },
-    palette: { z: 1.3, cx: 0.38, cy: 0.13, dim: 0.3 },
-    constellation: { z: 1.2, cx: 0.5, cy: 0.2, dim: 0.35 },
+    //            zoom     centre (0–1 across, down)  dim       tint [r, g, b]          saturation  flow  star glow
+    about:         { z: 1.22, cx: 0.32, cy: 0.42, dim: 0.22, tint: [1.07, 1.0, 0.88],  sat: 1.08, flow: 1.0, glow: 1.1 },   // warm: the figure and the bright star
+    journey:       { z: 1.38, cx: 0.53, cy: 0.29, dim: 0.26, tint: [0.9, 0.97, 1.12],  sat: 1.15, flow: 1.3, glow: 1.0 },   // the great spiral, cool and moving
+    world:         { z: 1.5, cx: 0.62, cy: 0.74, dim: 0.26, tint: [0.84, 1.05, 1.05], sat: 1.05, flow: 0.9, glow: 0.9 },   // the sea, teal
+    memories:      { z: 1.56, cx: 0.33, cy: 0.62, dim: 0.26, tint: [1.08, 0.97, 0.84], sat: 0.7, flow: 0.7, glow: 1.0 },   // the figure, faded like a photograph
+    work:          { z: 1.64, cx: 0.74, cy: 0.34, dim: 0.2, tint: [0.98, 0.9, 1.12],  sat: 1.12, flow: 1.2, glow: 1.15 },  // the second spiral, violet
+    palette:       { z: 1.74, cx: 0.4, cy: 0.14, dim: 0.24, tint: [1.04, 1.0, 0.97],  sat: 1.4, flow: 1.0, glow: 1.1 },    // the stars, colours at their richest
+    constellation: { z: 1.84, cx: 0.52, cy: 0.17, dim: 0.32, tint: [0.84, 0.9, 1.14],  sat: 0.8, flow: 0.55, glow: 1.5 },  // deep night, the stars brightest
     contact: 'hero'
   };
+  var NATURAL = { tint: [1, 1, 1], sat: 1, flow: 1, glow: 1 };
   var camera = {
     keys: [], current: null,
     measure: function () {
@@ -471,9 +485,7 @@
       });
     },
     get: function (name) {
-      var hero = name === 'hero' || CAMS[name] === 'hero';
-      // with reduced motion the painting keeps its full view and only dims behind the sections
-      if (hero || RJY.reducedMotion) { var v = RJY.Painting.heroView(vw(), vh()); v.dim = hero ? 0 : CAMS[name].dim; return v; }
+      if (name === 'hero' || CAMS[name] === 'hero') return Object.assign(RJY.Painting.heroView(vw(), vh()), { dim: 0 }, NATURAL);
       return CAMS[name];
     },
     // 0..1: how far the camera has travelled into the final (contact) view
@@ -492,7 +504,13 @@
       var t = b === a ? 0 : Math.min(1, Math.max(0, (y - a.y) / Math.max(1, b.y - a.y)));
       t = t * t * (3 - 2 * t);
       var lerp = function (p, q) { return p + (q - p) * t; };
-      this.current = { z: lerp(A.z, B.z), cx: lerp(A.cx, B.cx), cy: lerp(A.cy, B.cy), dim: lerp(A.dim, B.dim) };
+      this.current = {
+        z: lerp(A.z, B.z), cx: lerp(A.cx, B.cx), cy: lerp(A.cy, B.cy), dim: lerp(A.dim, B.dim),
+        tint: [lerp(A.tint[0], B.tint[0]), lerp(A.tint[1], B.tint[1]), lerp(A.tint[2], B.tint[2])],
+        sat: lerp(A.sat, B.sat), flow: lerp(A.flow, B.flow), glow: lerp(A.glow, B.glow)
+      };
+      // paused: nothing moves, so the view stays the full painting (the colours and dimming still follow)
+      if (motion.paused) Object.assign(this.current, RJY.Painting.heroView(vw(), vh()));
       return this.current;
     }
   };
@@ -510,11 +528,10 @@
     var cam = cameraFrozen ? camera.current : camera.compute();
     if (painting && glReady) {
       if (!cameraFrozen) {
-        painting.setView(cam);
-        painting.setScroll(cam.dim);
-        // the painting is mostly hidden behind the veils between hero and contact
+        painting.setCamera(cam);
+        // behind the sections the painting is partly veiled: a little less resolution and frame rate
         var veiled = y > H * 1.2 && y < (camera.keys[camera.keys.length - 1].y - H * 0.6);
-        painting.setBudget(veiled ? 0.6 : 1, veiled ? 30 : 60);
+        painting.setBudget(veiled ? 0.8 : 1, veiled ? 40 : 60);
       }
     } else if (doc.classList.contains('is-still') && !cameraFrozen && !doc.classList.contains('is-portal-still')) layoutStill();
     nav.classList.toggle('is-scrolled', y > 40);

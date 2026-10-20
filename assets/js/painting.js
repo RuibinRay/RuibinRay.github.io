@@ -156,6 +156,8 @@
     'uniform vec4 uSF[12];uniform vec4 uSG[12];uniform vec4 uSD[3];',
     // portal: uPortal = (centre x, centre y, progress, style); uPortal2 = (night amount, mix, sparkle, swirl sense)
     'uniform vec4 uPortal;uniform vec4 uPortal2;',
+    // the colour mood of the part of the page being read: tint (rgb) and saturation (a), set by the scroll
+    'uniform vec4 uGrade;',
     'float ss(float a,float b,float x){float t=clamp((x-a)/(b-a),0.0,1.0);return t*t*(3.0-2.0*t);}',
     'vec2 rot(vec2 v,float a){float c=cos(a),s=sin(a);return vec2(c*v.x-s*v.y,s*v.x+c*v.y);}',
     'float hash(vec2 v){return fract(sin(dot(v,vec2(12.9898,78.233)))*43758.5453);}',
@@ -298,6 +300,9 @@
     '    float spk=uPortal2.z*nv*(1.0-smoothstep(0.9,1.0,PP))*step(0.997,hash(floor(p/2.0)))*(0.6+0.4*sin(uClock*9.0+p.x));',
     '    col=mix(col,night,nv)+vec3(1.0,0.85,0.5)*spk;',
     '  }',
+    // the mood of the section being read: a gentle tint and a change of saturation
+    '  float lg=dot(col,vec3(0.299,0.587,0.114));',
+    '  col=mix(vec3(lg),col,uGrade.w)*uGrade.rgb;',
     // atmosphere: vignette, scroll dimming, intro fade, film grain
     '  vec2 sc=p/uRes-0.5;',
     '  col*=mix(1.0-0.30*uFx.z,1.0,smoothstep(0.95,0.25,length(sc*vec2(1.05,1.25))));',
@@ -365,6 +370,9 @@
     this.clock = 0;
     this.intro = this.opts.introDuration > 0 ? 0 : 1;
     this.gentle = false;          // reduced motion: a slower, calmer painting (see setGentle)
+    // where the scroll is taking the camera, and the colour mood of that part of the page
+    this.mood = { tint: [1, 1, 1], sat: 1, flow: 1, glow: 1 };
+    this.camTarget = null;
     this.introStart = null;
     this.quality = 1;
     this.frameTimes = [];
@@ -399,7 +407,7 @@
   }
 
   var UNIFORMS = ['uImage', 'uSky', 'uSea', 'uMask', 'uNoise', 'uBlur', 'uRes', 'uMap', 'uAspect', 'uHorizon', 'uFlowT', 'uClock', 'uIntro', 'uScroll', 'uMouse',
-    'uParams', 'uFx', 'uSpiral1', 'uSpiral2', 'uSF', 'uSG', 'uSD', 'uPortal', 'uPortal2'];
+    'uParams', 'uFx', 'uSpiral1', 'uSpiral2', 'uSF', 'uSG', 'uSD', 'uPortal', 'uPortal2', 'uGrade'];
 
   Painting.prototype.init = function () {
     try { return this._init(); } catch (e) { return Promise.reject(e); }
@@ -618,6 +626,38 @@
     return { x: m[0] + x * m[2], y: m[1] + y * m[3], scale: m[2] };
   };
 
+  /* ---------- the scroll camera ----------
+     cam: { z, cx, cy, dim, tint: [r, g, b], sat, flow, glow }. While the painting animates, the camera
+     glides to it (a smoothed scrub, so scrolling feels continuous); otherwise it is applied at once. */
+  Painting.prototype.setCamera = function (cam, now) {
+    if (!cam) return;
+    if (now || !this.running || !this.view) { this.camTarget = null; this._setCam(cam); return; }
+    this.camTarget = cam;
+  };
+  Painting.prototype._setCam = function (c) {
+    this.view = { z: c.z, cx: c.cx, cy: c.cy };
+    this.scroll = c.dim || 0;
+    if (c.tint) this.mood = { tint: c.tint.slice(), sat: c.sat == null ? 1 : c.sat, flow: c.flow == null ? 1 : c.flow, glow: c.glow == null ? 1 : c.glow };
+    if (this.gl && this.cssSize) this._applyMap();
+    this._redraw();
+  };
+  Painting.prototype._glide = function (dt) {
+    var T = this.camTarget;
+    if (!T) return;
+    var v = this.view, k = 1 - Math.exp(-dt * 6), m = this.mood, done = true;
+    function step(a, b) { var d = b - a; if (Math.abs(d) > 1e-4) done = false; return a + d * k; }
+    v.z = step(v.z, T.z); v.cx = step(v.cx, T.cx); v.cy = step(v.cy, T.cy);
+    this.scroll = step(this.scroll, T.dim || 0);
+    if (T.tint) {
+      m.tint = [step(m.tint[0], T.tint[0]), step(m.tint[1], T.tint[1]), step(m.tint[2], T.tint[2])];
+      m.sat = step(m.sat, T.sat == null ? 1 : T.sat); m.flow = step(m.flow, T.flow == null ? 1 : T.flow); m.glow = step(m.glow, T.glow == null ? 1 : T.glow);
+    }
+    if (this.gl && this.cssSize) this._applyMap();
+    if (done) { this._setCam(T); this.camTarget = null; }
+  };
+  // the camera the painting is actually showing right now (for placing things over it)
+  Painting.prototype.currentCamera = function () { return this.view; };
+
   Painting.prototype.setMouse = function (x, y) { this.mouseTarget = [x, y]; };
   Painting.prototype.setScroll = function (v) { this.scroll = v; this._redraw(); };
   Painting.prototype.skipIntro = function () { this.intro = 1; this.introStart = -1e9; };
@@ -743,7 +783,9 @@
     gl.uniform1f(u.uIntro, this.intro);
     gl.uniform1f(u.uScroll, this.scroll);
     gl.uniform2f(u.uMouse, this.mouse[0], this.mouse[1]);
-    gl.uniform4f(u.uParams, this.params[0], this.params[1], this.params[2], this.params[3]);
+    var md = this.mood;
+    gl.uniform4f(u.uParams, this.params[0] * md.flow, this.params[1], this.params[2], this.params[3] * md.glow);
+    gl.uniform4f(u.uGrade, md.tint[0], md.tint[1], md.tint[2], md.sat);
     gl.uniform4f(u.uFx, this.fx[0], this.fx[1], this.fx[2], this.fx[3]);
     gl.uniform4fv(u.uSF, this._sf);
     gl.uniform4fv(u.uSG, this._sg);
@@ -782,6 +824,7 @@
   Painting.prototype.stop = function () {
     this.running = false;
     cancelAnimationFrame(this._raf);
+    if (this.camTarget) { var T = this.camTarget; this.camTarget = null; this._setCam(T); }
   };
 
   Painting.prototype._frame = function (now) {
@@ -805,6 +848,7 @@
     }
     var P = this.portalState;
     if (P && !P.fade) P.p = Math.min(1, P.p + dt / P.dur);
+    this._glide(dt);
     this._updateLights(dt);
     this._stepPortal();
     var portalActive = !!this.portalState;

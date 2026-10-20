@@ -4,6 +4,8 @@
  * the `related` / `seenIn` / `country` fields in /data, so every connection is a real one.
  * Rows: skills (top) · projects · the journey in time order · places (on the horizon).
  * Hover or focus a star to trace its lines; select it to open it.
+ * No chart library: plain SVG. The stars float gently (a few units each, out of step), and the lines
+ * follow them; the drifting pauses off-screen and with the site's pause button.
  */
 (function () {
   'use strict';
@@ -79,11 +81,21 @@
     svg.appendChild(s('path', { class: 'graph__horizon', d: 'M' + (M - 30) + ' ' + (ROWS.c + 22) + ' C' + W * 0.4 + ' ' + (ROWS.c + 16) + ' ' + W * 0.7 + ' ' + (ROWS.c + 28) + ' ' + (W - 20) + ' ' + (ROWS.c + 21) }));
     var gEdges = s('g', { class: 'graph__edges' }), gNodes = s('g', { class: 'graph__nodes' });
     svg.appendChild(gEdges); svg.appendChild(gNodes);
+    // each star drifts on its own slow loop around its place; dx/dy are the current offsets
+    g.list.forEach(function (n, i) {
+      var r = function (k) { var v = Math.sin((i + 1) * 91.7 + k * 12.3) * 43758.5453; return v - Math.floor(v); };
+      n.dx = 0; n.dy = 0;
+      n.fl = { ax: 2.5 + 3.5 * r(1), ay: 2 + 3 * r(2), wx: 0.16 + 0.2 * r(3), wy: 0.13 + 0.18 * r(4), px: 6.283 * r(5), py: 6.283 * r(6) };
+    });
+    // a line between two stars: a gentle arc within a row, an S-curve between rows
+    function edgeD(A, B) {
+      var ax = A.x + A.dx, ay = A.y + A.dy, bx = B.x + B.dx, by = B.y + B.dy;
+      if (A.y === B.y) { var mx = (ax + bx) / 2, lift = Math.min(70, Math.abs(bx - ax) * 0.3); return 'M' + ax.toFixed(1) + ' ' + ay.toFixed(1) + ' Q' + mx.toFixed(1) + ' ' + ((ay + by) / 2 - lift).toFixed(1) + ' ' + bx.toFixed(1) + ' ' + by.toFixed(1); }
+      var my = (ay + by) / 2;
+      return 'M' + ax.toFixed(1) + ' ' + ay.toFixed(1) + ' C' + ax.toFixed(1) + ' ' + my.toFixed(1) + ' ' + bx.toFixed(1) + ' ' + my.toFixed(1) + ' ' + bx.toFixed(1) + ' ' + by.toFixed(1);
+    }
     var edgeEls = g.edges.map(function (e) {
-      var A = g.nodes[e[0]], B = g.nodes[e[1]], d;
-      if (A.y === B.y) { var mx = (A.x + B.x) / 2, lift = Math.min(70, Math.abs(B.x - A.x) * 0.3); d = 'M' + A.x + ' ' + A.y + ' Q' + mx + ' ' + (A.y - lift) + ' ' + B.x + ' ' + B.y; }
-      else { var my = (A.y + B.y) / 2; d = 'M' + A.x + ' ' + A.y + ' C' + A.x + ' ' + my + ' ' + B.x + ' ' + my + ' ' + B.x + ' ' + B.y; }
-      var p = s('path', { d: d, class: 'graph__edge' }); p._a = e[0]; p._b = e[1];
+      var p = s('path', { d: edgeD(g.nodes[e[0]], g.nodes[e[1]]), class: 'graph__edge' }); p._a = e[0]; p._b = e[1];
       gEdges.appendChild(p); return p;
     });
     // nodes
@@ -182,5 +194,28 @@
       var io = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { svg.classList.remove('is-hidden'); io.disconnect(); } }, { threshold: 0.3 });
       io.observe(svg);
     }
+
+    // the floating: only while the chart is on screen, at ~30 frames a second, calmer with reduced motion
+    var onScreen = false, raf = 0, last = 0, t0 = performance.now(), calm = RJY.reducedMotion ? 0.5 : 1;
+    function float(now) {
+      raf = 0;
+      if (!onScreen || (RJY.motion && RJY.motion.paused)) return;
+      raf = requestAnimationFrame(float);
+      if (now - last < 32) return;
+      last = now;
+      var t = (now - t0) / 1000 * calm;
+      g.list.forEach(function (n) {
+        var f = n.fl;
+        n.dx = f.ax * calm * Math.sin(t * f.wx * 6.283 + f.px);
+        n.dy = f.ay * calm * Math.sin(t * f.wy * 6.283 + f.py);
+        nodeEls[n.key].setAttribute('transform', 'translate(' + n.dx.toFixed(2) + ' ' + n.dy.toFixed(2) + ')');
+      });
+      edgeEls.forEach(function (p) { p.setAttribute('d', edgeD(g.nodes[p._a], g.nodes[p._b])); });
+    }
+    function wake() { if (!raf && onScreen && !(RJY.motion && RJY.motion.paused)) raf = requestAnimationFrame(float); }
+    if ('IntersectionObserver' in window) {
+      new IntersectionObserver(function (es) { onScreen = es[0].isIntersecting; wake(); }, { rootMargin: '80px' }).observe(svg);
+    }
+    document.addEventListener('rjy:motion', wake);
   };
 })();

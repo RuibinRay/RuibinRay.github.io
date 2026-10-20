@@ -92,24 +92,96 @@
     return '<svg class="pig__swatch" viewBox="0 0 300 54" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '" fill="' + c[0] + '" opacity=".92"/>' + bristles + '</svg>';
   }
 
+  // A tall painted stroke for a colour band (stretched to fill it; the bristles keep their width).
+  function vstroke(pigment, seed) {
+    var c = PIGMENTS[pigment] || PIGMENTS.gold, H = 600, n = 30, left = [], right = [], i;
+    for (i = 0; i <= n; i++) {
+      var y = 4 + (H - 8) * i / n, t = i / n;
+      var taper = Math.min(1, t * 9) * Math.min(1, (1 - t) * 7);
+      var half = (41 + 5 * Math.sin(t * 5 + seed)) * (0.6 + 0.4 * taper);
+      var mid = 50 + 3 * Math.sin(t * 3.1 + seed * 1.3);
+      left.push([mid - half - rand(seed + i) * 3, y]);
+      right.push([mid + half + rand(seed * 3 + i) * 3, y]);
+    }
+    var pt = function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); };
+    var d = 'M' + left.map(pt).join(' L') + ' L' + right.reverse().map(pt).join(' L') + ' Z';
+    var bristles = '';
+    for (i = 0; i < 15; i++) {
+      var x = 12 + i * 5.3 + rand(seed + i * 7) * 3, y0 = 8 + rand(seed + i) * 70, y1 = H - 8 - rand(seed + i * 2) * 110;
+      var col = i % 3 === 0 ? c[1] : (i % 3 === 1 ? c[2] : c[0]);
+      bristles += '<path d="M' + x.toFixed(1) + ' ' + y0.toFixed(1) + ' C' + (x - 3 + rand(seed + i * 3) * 6).toFixed(1) + ' ' + (y0 + 170).toFixed(1) + ' ' +
+        (x + 3 - rand(seed + i * 5) * 6).toFixed(1) + ' ' + (y1 - 170).toFixed(1) + ' ' + (x + rand(seed + i * 9) * 4 - 2).toFixed(1) + ' ' + y1.toFixed(1) +
+        '" stroke="' + col + '" stroke-width="' + (1 + rand(seed + i * 11) * 2.4).toFixed(2) + '" fill="none" opacity="' + (0.35 + rand(seed + i * 13) * 0.45).toFixed(2) + '" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
+    }
+    return '<svg class="pal__stroke" viewBox="0 0 100 600" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '" fill="' + c[0] + '"/>' + bristles + '</svg>';
+  }
+
+  /* My Palette: one colour band per skill. Pointing at a band (or focusing it, or tapping it on a
+     phone) widens it to show what the skill is, the tools behind it and where it shows; the other
+     colours dim. Everything stays in the page for screen readers; only the view changes. */
   RJY.renderPalette = function (root) {
-    SITE.palette.forEach(function (g, i) {
-      var tools = has(g.tools) ? h('div', { class: 'pig__tools', 'aria-label': 'Tools' }, g.tools.map(function (t) { return h('span', { text: t }); })) : null;
-      var el = h('article', { class: 'pig reveal', id: 'skill-' + g.id },
-        h('div', { html: swatch(g.pigment, i * 3.7 + 1) }),
-        h('h3', { text: g.name }),
-        h('p', { text: g.text }),
-        tools,
-        RJY.connections(g.seenIn, 'Where it shows')
-      );
-      root.appendChild(el);
+    var list = h('ul', { class: 'pal reveal', role: 'list' });
+    var items = SITE.palette.map(function (g, i) {
+      var c = PIGMENTS[g.pigment] || PIGMENTS.gold;
+      var tools = has(g.tools) ? h('ul', { class: 'pal__tools', 'aria-label': 'Tools' }, g.tools.map(function (t) { return h('li', { text: t }); })) : null;
+      var el = h('li', { class: 'pal__item', id: 'skill-' + g.id, tabindex: '0', 'aria-labelledby': 'skill-' + g.id + '-name' },
+        h('div', { class: 'pal__paint', 'aria-hidden': 'true', html: vstroke(g.pigment, i * 3.7 + 1) + swatch(g.pigment, i * 3.7 + 1) }),
+        h('span', { class: 'pal__label', 'aria-hidden': 'true', text: g.name }),
+        h('div', { class: 'pal__more' },
+          h('h3', { class: 'pal__name', id: 'skill-' + g.id + '-name', text: g.name }),
+          h('p', { class: 'pal__text', text: g.text }),
+          tools,
+          RJY.connections(g.seenIn, 'Where it shows')));
+      el.style.setProperty('--pig', c[0]); el.style.setProperty('--pig-light', c[1]); el.style.setProperty('--pig-deep', c[2]);
+      // pointing (wide screens) and keyboard focus show a colour while they last
+      el.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'touch' && wide.matches) mark('is-hover', 'has-hover', el); });
+      el.addEventListener('pointerleave', function () { if (el.classList.contains('is-hover')) mark('is-hover', 'has-hover', null); });
+      el.addEventListener('focusin', function (e) { mark('is-kbd', 'has-kbd', keyboardFocus(e.target) ? el : null); });
+      el.addEventListener('focusout', function (e) { if (!el.contains(e.relatedTarget) && el.classList.contains('is-kbd')) mark('is-kbd', 'has-kbd', null); });
+      // a tap (or click, or Enter) keeps a colour open; the links inside work as usual
+      el.addEventListener('click', function (e) { if (e.target.closest('a')) return; toggle(el); });
+      el.addEventListener('keydown', function (e) { if ((e.key === 'Enter' || e.key === ' ') && e.target === el) { e.preventDefault(); toggle(el); } });
+      list.appendChild(el);
+      return el;
     });
+    // The state lives in classes (hover, then keyboard, then kept open — see the CSS), which every
+    // browser updates reliably, rather than in :has() selectors.
+    var wide = window.matchMedia ? window.matchMedia('(min-width: 900px)') : { matches: true };
+    function keyboardFocus(t) { try { return t.matches(':focus-visible'); } catch (err) { return true; } }
+    function mark(cls, flag, el) {
+      items.forEach(function (x) { x.classList.toggle(cls, x === el); });
+      list.classList.toggle(flag, !!el);
+    }
+    function toggle(el, open) {
+      var on = open == null ? !el.classList.contains('is-open') : open;
+      mark('is-open', 'has-open', on ? el : null);
+    }
+    list._open = function (el) { toggle(el, true); };
+    var hint = h('p', { class: 'pal__hint' });
+    function hintText() {
+      hint.textContent = (!RJY.finePointer ? 'Tap' : wide.matches ? 'Point at' : 'Click') + ' a colour to see the skill behind it.';
+    }
+    hintText();
+    if (wide.addEventListener) wide.addEventListener('change', hintText);
+    root.appendChild(hint);
+    root.appendChild(list);
+    // the text inside an open colour is laid out at the colour's final width, so it doesn't reflow
+    // while the band widens (flex-grow 4.6 against 1 for each of the others, as in the CSS)
+    function measure() {
+      var gap = parseFloat(getComputedStyle(list).columnGap) || 0, n = items.length;
+      var open = (list.clientWidth - gap * (n - 1)) * 4.6 / (4.6 + n - 1);
+      if (open > 0) list.style.setProperty('--pal-open', Math.floor(open) + 'px');
+    }
+    measure();
+    if ('ResizeObserver' in window) new ResizeObserver(measure).observe(list); else window.addEventListener('resize', measure);
   };
 
   RJY.flashSkill = function (id) {
     var el = document.getElementById('skill-' + id);
     if (!el) return;
-    RJY.scrollTo(el, { offset: 120 });
+    var list = el.closest('.pal');
+    if (list && list._open) list._open(el);
+    RJY.scrollTo(list || el, { offset: 120 });
     el.classList.remove('is-flash'); void el.offsetWidth; el.classList.add('is-flash');
   };
 

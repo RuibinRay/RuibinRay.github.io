@@ -18,7 +18,7 @@
   var LIT = { home: 1, visited: 1, current: 1 };
 
   var G, world, features = [], byCode = {}, paths = {}, svgEl, gZoom, zoom, projection, pathGen, root, mapEl, tip, selected = null;
-  var started = false, ready = false, pendingOpen = null;
+  var started = false, ready = false, pendingOpen = null, mapScroll = null;
 
   /* ---------- data (with local edits in draft mode) ---------- */
   function edits() { if (!RJY.draft) return {}; try { return JSON.parse(localStorage.getItem(STORE) || '{}'); } catch (e) { return {}; } }
@@ -91,6 +91,13 @@
       searchBox());
     root.insertBefore(bar, mapEl);
 
+    // on phones the map keeps a full width and is swiped sideways inside this frame
+    var frame = h('div', { class: 'map-frame' }), scroller = h('div', { class: 'map-scroll' });
+    root.insertBefore(frame, mapEl);
+    frame.appendChild(scroller);
+    scroller.appendChild(mapEl);
+    mapScroll = scroller;
+
     mapEl.innerHTML = '';
     var NS = 'http://www.w3.org/2000/svg';
     svgEl = RJY.s('svg', { role: 'img', 'aria-label': 'World map. Use the country search or the list below the map to open a country.' });
@@ -106,13 +113,19 @@
     mapEl.appendChild(dust);
     tip = h('div', { class: 'map__tip', role: 'presentation' });
     mapEl.appendChild(tip);
-    mapEl.appendChild(h('div', { class: 'map__controls' },
+    frame.appendChild(h('p', { class: 'map__swipe', 'aria-hidden': 'true', text: 'Swipe to explore the map' }));
+    frame.appendChild(h('div', { class: 'map__controls' },
       h('button', { type: 'button', 'aria-label': 'Zoom in', onclick: function () { zoomBy(1.6); }, text: '+' }),
       h('button', { type: 'button', 'aria-label': 'Zoom out', onclick: function () { zoomBy(1 / 1.6); }, text: '−' }),
       h('button', { type: 'button', 'aria-label': 'Reset map', onclick: resetZoom, html: '<svg viewBox="0 0 14 14" aria-hidden="true"><circle cx="7" cy="7" r="5.2" fill="none" stroke="currentColor" stroke-width="1.3"/><circle cx="7" cy="7" r="1.4" fill="currentColor"/></svg>' })));
 
     draw();
     setupZoom();
+    centerScroll(false);
+    // the "swipe" hint goes once the visitor touches the map (the centring above scrolls it too)
+    ['touchstart', 'pointerdown', 'wheel'].forEach(function (ev) {
+      scroller.addEventListener(ev, function () { frame.classList.add('is-swiped'); }, { passive: true, once: true });
+    });
     below();
     startDust(dust);
     var rt; window.addEventListener('resize', function () { clearTimeout(rt); rt = setTimeout(function () { draw(true); }, 220); });
@@ -210,6 +223,12 @@
       clearTimeout(hintT); hintT = setTimeout(function () { tip.style.opacity = 0; }, 1400);
     }, { passive: true });
   }
+  // phones: bring the middle of the map (where zoomTo puts a country) into view
+  function centerScroll(smooth) {
+    if (!mapScroll || mapScroll.scrollWidth <= mapScroll.clientWidth + 2) return;
+    var left = (mapScroll.scrollWidth - mapScroll.clientWidth) / 2;
+    if (smooth && !RJY.reducedMotion) mapScroll.scrollTo({ left: left, behavior: 'smooth' }); else mapScroll.scrollLeft = left;
+  }
   function zoomBy(k) { G.select(svgEl).transition().duration(500).call(zoom.scaleBy, k); }
   function resetZoom() { G.select(svgEl).transition().duration(700).call(zoom.transform, G.zoomIdentity); }
   function zoomTo(code) {
@@ -224,6 +243,7 @@
     var offset = window.innerWidth > 900 ? vb.width * 0.16 / k : 0;   // keep it clear of the side panel
     var t = G.zoomIdentity.translate(vb.width / 2 - offset * k, vb.height / 2).scale(k).translate(-cx, -cy);
     G.select(svgEl).transition().duration(RJY.reducedMotion ? 0 : 900).call(zoom.transform, t);
+    centerScroll(true);
   }
 
   /* ---------- search ---------- */
