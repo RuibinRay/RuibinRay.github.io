@@ -706,7 +706,7 @@ p.about__closing {
 .albums__title { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-xl); }
 .albums__title svg { width: 14px; height: 14px; color: var(--gold); filter: drop-shadow(0 0 6px rgba(242, 193, 78, .6)); }
 .albums__lede { margin: 0; font-size: var(--t-sm); color: var(--ivory-3); }
-.albums__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: clamp(10px, 1.4vw, 18px); }
+.albums__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--cols, 4), minmax(0, 1fr)); gap: clamp(10px, 1.4vw, 18px); }
 .album {
   position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; isolation: isolate;
   color: var(--ivory); text-decoration: none; background: rgba(243, 234, 219, .05); border: 1px solid var(--line-faint);

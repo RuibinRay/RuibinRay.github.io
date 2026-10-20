@@ -80,7 +80,8 @@ SITE.travel = {
             { src: 'assets/media/travel/cri/guanacaste/guanacaste-06.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
             { src: 'assets/media/travel/cri/guanacaste/guanacaste-07.webp', w: 2048, h: 1152, caption: 'Playa Flamingo' },
             { src: 'assets/media/travel/cri/guanacaste/guanacaste-08.webp', w: 2048, h: 1152, caption: 'Riu, Guanacaste' },
-            { src: 'assets/media/travel/cri/guanacaste/guanacaste-09.webp', w: 2048, h: 1152, caption: 'The Westin, Guanacaste' }
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-09.webp', w: 2048, h: 1152, caption: 'The Westin, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-10.webp', w: 1280, h: 1707, caption: 'Riu, Guanacaste' }
           ] },
         { name: 'Puntarenas', region: 'Puntarenas', photos: [
             { src: 'assets/media/travel/cri/puntarenas/puntarenas-01.webp', w: 2048, h: 1155, caption: 'Puntarenas' },
@@ -110,21 +111,108 @@ SITE.travel = {
     {
       code: 'CHN', status: 'visited',
       headline: 'My roots, and a summer of work in Shenyang',
+      cover: 'assets/media/travel/chn/lijiang/lijiang-23.webp',
       years: [2026],
       places: [
         { name: 'Shenyang', region: 'Liaoning', note: 'Overseas Sales / Business Development Intern at HJAT, Jun – Aug 2026', photos: [
             { src: 'assets/media/journey/hjat/vrfb-knowledge-competition.webp', w: 1706, h: 1279, caption: '1st place in the VRFB knowledge competition at HJAT' }
           ] },
-        { name: 'Shanghai' },
-        { name: 'Changchun', region: 'Jilin' },
+        { name: 'Shanghai', photos: [
+            { src: 'assets/media/travel/chn/shanghai/shanghai-01.webp', w: 1536, h: 2048, caption: 'Van Gogh exhibition, Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-02.webp', w: 1536, h: 2048, caption: 'Van Gogh exhibition, Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-03.webp', w: 1514, h: 2048, caption: 'The Bund, Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-04.webp', w: 2048, h: 1152, caption: 'Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-05.webp', w: 1536, h: 2048, caption: 'Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-06.webp', w: 1280, h: 1707, caption: 'Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-07.webp', w: 1920, h: 1080, caption: 'Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-08.webp', w: 1536, h: 2048, caption: 'The Bund at night, Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-09.webp', w: 2048, h: 1152, caption: 'The Bund at night, Shanghai' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-10.webp', w: 2048, h: 1536, caption: 'Shanghai Disneyland' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-11.webp', w: 1536, h: 2048, caption: 'Shanghai Disneyland' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-12.webp', w: 2048, h: 1536, caption: 'Shanghai Disneyland' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-13.webp', w: 2048, h: 1152, caption: 'Shanghai Disneyland' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-14.webp', w: 1536, h: 2048, caption: 'Shanghai Disneyland' },
+            { src: 'assets/media/travel/chn/shanghai/shanghai-15.webp', w: 2048, h: 1536, caption: '1000 Trees, Shanghai' }
+          ] },
+        { name: 'Changchun', region: 'Jilin', photos: [
+            { src: 'assets/media/travel/chn/changchun/changchun-01.webp', w: 1536, h: 2048, caption: 'Changchun' },
+            { src: 'assets/media/travel/chn/changchun/changchun-02.webp', w: 2048, h: 1536, caption: 'Changchun' }
+          ] },
         { name: 'Kunming', region: 'Yunnan' },
-        { name: 'Dali', region: 'Yunnan' }
+        { name: 'Dali', region: 'Yunnan', photos: [
+            { src: 'assets/media/travel/chn/dali/dali-01.webp', w: 1536, h: 2048, caption: 'Erhai Lake, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-02.webp', w: 1536, h: 2048, caption: 'Flomis Garden, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-03.webp', w: 1365, h: 2048, caption: 'Flomis Garden, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-04.webp', w: 1365, h: 2048, caption: 'Flomis Garden, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-05.webp', w: 1365, h: 2048, caption: 'Flomis Garden, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-06.webp', w: 1365, h: 2048, caption: 'Flomis Garden, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-07.webp', w: 2048, h: 1536, caption: 'Erhai Lake, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-08.webp', w: 2048, h: 1536, caption: 'Erhai Lake, Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-09.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-10.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-11.webp', w: 1536, h: 2048, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-12.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-13.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-14.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-15.webp', w: 1536, h: 2048, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-16.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-17.webp', w: 1536, h: 2048, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-18.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-19.webp', w: 1536, h: 2048, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-20.webp', w: 2048, h: 1536, caption: 'Dali' },
+            { src: 'assets/media/travel/chn/dali/dali-21.webp', w: 1536, h: 2048, caption: 'Dali' }
+          ] },
+        { name: 'Lijiang', region: 'Yunnan', photos: [
+            { src: 'assets/media/travel/chn/lijiang/lijiang-01.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-02.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-03.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-04.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-05.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-06.webp', w: 2048, h: 1536, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-07.webp', w: 1536, h: 2048, caption: 'Jade Dragon Snow Mountain' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-08.webp', w: 1280, h: 1707, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-09.webp', w: 1487, h: 2048, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-10.webp', w: 1536, h: 2048, caption: 'Shuhe Ancient Town' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-11.webp', w: 1722, h: 2048, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-12.webp', w: 1440, h: 1920, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-13.webp', w: 1440, h: 1920, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-14.webp', w: 1536, h: 2048, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-15.webp', w: 1536, h: 2048, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-16.webp', w: 2048, h: 1536, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-17.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-18.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-19.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-20.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-21.webp', w: 1536, h: 2048, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-22.webp', w: 2048, h: 1536, caption: 'Lijiang' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-23.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' },
+            { src: 'assets/media/travel/chn/lijiang/lijiang-24.webp', w: 2048, h: 1536, caption: 'Blue Moon Valley' }
+          ] },
+        { name: 'Shenzhen', region: 'Guangdong', photos: [
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-01.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-02.webp', w: 1536, h: 2048, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-03.webp', w: 1536, h: 2048, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-04.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-05.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-06.webp', w: 1536, h: 2048, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-07.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-08.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-09.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-10.webp', w: 2048, h: 1536, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-11.webp', w: 2048, h: 1536, caption: 'MixC, Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-12.webp', w: 1536, h: 2048, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-13.webp', w: 1536, h: 2048, caption: 'Shenzhen' },
+            { src: 'assets/media/travel/chn/shenzhen/shenzhen-14.webp', w: 2048, h: 1536, caption: 'Shenzhen' }
+          ] }
       ],
       story: '',
       highlights: [],
       learned: '',
       companions: '',
-      photos: [],
+      photos: [
+        { src: 'assets/media/travel/chn/chn-01.webp', w: 2048, h: 1536, caption: 'China' },
+        { src: 'assets/media/travel/chn/chn-02.webp', w: 2048, h: 1536, caption: 'China' }
+      ],
       videos: [],
       related: ['j:hjat', 'w:market-maps', 'w:study-guides', 'w:outreach']
     },
@@ -176,7 +264,9 @@ SITE.travel = {
             { src: 'assets/media/travel/usa/los-angeles/los-angeles-01.webp', w: 1536, h: 2048, caption: 'At the chef’s counter' },
             { src: 'assets/media/travel/usa/los-angeles/los-angeles-02.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' },
             { src: 'assets/media/travel/usa/los-angeles/los-angeles-03.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' },
-            { src: 'assets/media/travel/usa/los-angeles/los-angeles-04.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' }
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-04.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' },
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-05.webp', w: 1280, h: 1440, caption: 'Los Angeles' },
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-06.webp', w: 1707, h: 1280, caption: 'Los Angeles' }
           ] }
       ],
       story: '',
@@ -214,15 +304,22 @@ SITE.travel = {
     {
       code: 'KOR', status: 'visited',  // South Korea
       headline: '',
+      cover: 'assets/media/travel/kor/kor-01.webp',
       years: [],
       places: [
-        { name: 'Seoul' }
+        { name: 'Seoul', photos: [
+            { src: 'assets/media/travel/kor/seoul/seoul-01.webp', w: 2048, h: 1536, caption: 'Seoul' },
+            { src: 'assets/media/travel/kor/seoul/seoul-02.webp', w: 2048, h: 1536, caption: 'Seoul' },
+            { src: 'assets/media/travel/kor/seoul/seoul-03.webp', w: 1706, h: 1279, caption: 'Seoul' }
+          ] }
       ],
       story: '',
       highlights: [],
       learned: '',
       companions: '',
-      photos: [],
+      photos: [
+        { src: 'assets/media/travel/kor/kor-01.webp', w: 1536, h: 2048, caption: 'South Korea' }
+      ],
       videos: [],
       related: []
     }

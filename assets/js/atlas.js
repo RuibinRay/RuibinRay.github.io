@@ -891,7 +891,19 @@
       h('h3', { class: 'albums__title' }, h('span', { html: RJY.starIcon() }), 'Memories'),
       h('p', { class: 'albums__lede', text: 'The photos from each country live in its chapter. Choose one here or on the map.' })));
     albumsEl.appendChild(h('ul', { class: 'albums__grid', role: 'list' }, cards));
+    balanceAlbums();
   }
+  // As many albums to a row as fit (at least ~150 px each), spread so the rows come out even
+  // (six albums: one row of six, or two of three — never five and one)
+  function balanceAlbums() {
+    var ul = albumsEl && albumsEl.querySelector('.albums__grid');
+    if (!ul || !ul.clientWidth) return;
+    var n = ul.children.length, gap = parseFloat(getComputedStyle(ul).columnGap) || 16;
+    var fit = Math.max(1, Math.floor((ul.clientWidth + gap) / (150 + gap)));
+    ul.style.setProperty('--cols', Math.ceil(n / Math.ceil(n / fit)));
+  }
+  var balanceTimer;
+  window.addEventListener('resize', function () { clearTimeout(balanceTimer); balanceTimer = setTimeout(balanceAlbums, 150); });
   function openAlbum(slug) {
     var g = otherAlbums().filter(function (x) { return x.slug === slug; })[0];
     if (!g) { RJY.sheet.close(true); RJY.scrollTo(albumsEl); return; }

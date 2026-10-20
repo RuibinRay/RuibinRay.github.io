@@ -38,9 +38,8 @@ Three rules the site follows:
 
 ### Things still worth adding (open `?draft` to see them all)
 
-- [ ] **The cities and provinces/states you visited** in Canada, South Korea, China and the US: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
-- [ ] **Photos from China and South Korea**: China has one so far (the VRFB competition in Shenyang), South Korea none. See *Adding photos*.
-- [ ] **Your teaching role in Costa Rica**: the organization, your role, the dates and any photos, for a new entry in `data/journey.js`.
+- [ ] **Any other cities you've visited**: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
+- [ ] **Your teaching at CCECC Costa Rica**: the photos are on the CCECC entry in `data/journey.js`; still to add in words: what you taught, to whom and when.
 - [ ] **The "Tech on the Go: No-Code for Coders" certificate PDF**, so it can show as an image like the others (it's listed as text for now).
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.

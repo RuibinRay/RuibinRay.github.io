@@ -24,6 +24,12 @@ SITE.journey = [
     summary: 'Worked between Chinese and Costa Rican partners.',
     details: ['Coordinated between Chinese and Costa Rican partners', 'Translated proposals', 'Planned events and followed up with stakeholders'],
     story: '', photo: { src: '', alt: '' },
+    photos: [
+      { src: 'assets/media/journey/ccecc/ccecc-teaching-01.webp', w: 1702, h: 1276, caption: 'Teaching at CCECC Costa Rica' },
+      { src: 'assets/media/journey/ccecc/ccecc-teaching-02.webp', w: 1702, h: 1276, caption: 'A Chinese character lesson' },
+      { src: 'assets/media/journey/ccecc/ccecc-teaching-03.webp', w: 1702, h: 1276, caption: 'With my students' },
+      { src: 'assets/media/journey/ccecc/ccecc-teaching-04.webp', w: 2048, h: 1076, caption: 'Class points chart' }
+    ],
     related: ['c:CRI', 's:intl-bd', 's:communication']
   },
   {
