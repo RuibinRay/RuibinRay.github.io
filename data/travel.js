@@ -17,11 +17,15 @@
  *              type     optional: 'region' when the place is a whole province/state rather than a city
  *              coords   optional: [latitude, longitude] for a place the map doesn't know (a beach, a park)
  *              note     one line about it;   story: a few sentences (optional)
- *              photos   optional: list of { src, alt, caption, date } — or simply upload the files (below)
+ *              photos   optional: list of { src, w, h, caption, date } — or simply upload the files (below);
+ *                       tools/prepare_media.py makes the three sizes and prints the line to paste
  *              folder   optional: the photo folder's name, if it isn't the place name (see PHOTOS)
  *   headline, story, learned, companions — your own words ('' hides them)
  *   highlights list of { kind, text } — kind is anything: 'Food', 'Culture', 'Architecture', 'Nature', …
  *   photos   photos of the country as a whole: list of { src, alt, caption, date } (or upload them, below)
+ *   cover    a photo shown across the top of the country's chapter (optional; otherwise its first photo)
+ *            Photos in assets/media/ were prepared in three sizes (name.webp, name-1080.webp, name-480.webp);
+ *            the site picks the right size for each screen. w and h are the full size, for the layout.
  *   videos   list of { src, poster, caption } — short .mp4 clips in assets/video/
  *   related  connected stars: 'j:<journey id>', 'w:<project id>', 's:<skill id>'
  *   For 'wishlist' countries, use: reasons, hopeToSee (list), activities (list), notes.
@@ -48,16 +52,58 @@ SITE.travel = {
     {
       code: 'CRI', status: 'home',
       headline: 'Where I was born',
+      cover: 'assets/media/travel/cri/guanacaste/guanacaste-01.webp',
       years: [],
       places: [
-        { name: 'San José', region: 'San José', note: 'Where I was born' },
-        { name: 'Heredia', region: 'Heredia', note: 'Lincoln School — IB Diploma, June 2023' }
+        { name: 'San José', region: 'San José', note: 'Where I was born', photos: [
+            { src: 'assets/media/travel/cri/san-jose/san-jose-01.webp', w: 2048, h: 1536, caption: 'San José' },
+            { src: 'assets/media/travel/cri/san-jose/san-jose-02.webp', w: 2048, h: 1536, caption: 'San José' },
+            { src: 'assets/media/travel/cri/san-jose/san-jose-03.webp', w: 2048, h: 1536, caption: 'San José by night' }
+          ] },
+        { name: 'Heredia', region: 'Heredia', note: 'Lincoln School — IB Diploma, June 2023', photos: [
+            { src: 'assets/media/travel/cri/heredia/heredia-01.webp', w: 2048, h: 1155, caption: 'Graduation, Lincoln School' }
+          ] },
+        { name: 'Arenal', region: 'Alajuela', coords: [10.47, -84.68], note: 'Kayaking, ziplining and the Tabacón hot springs', photos: [
+            { src: 'assets/media/travel/cri/arenal/arenal-01.webp', w: 2048, h: 1536, caption: 'Kayaking in Arenal' },
+            { src: 'assets/media/travel/cri/arenal/arenal-02.webp', w: 2048, h: 1536, caption: 'Ziplining in Arenal' },
+            { src: 'assets/media/travel/cri/arenal/arenal-03.webp', w: 2048, h: 1536, caption: 'Tabacón' },
+            { src: 'assets/media/travel/cri/arenal/arenal-04.webp', w: 2048, h: 1152, caption: 'Tabacón hot springs' },
+            { src: 'assets/media/travel/cri/arenal/arenal-05.webp', w: 2048, h: 1152, caption: 'Tabacón hot springs' },
+            { src: 'assets/media/travel/cri/arenal/arenal-06.webp', w: 2048, h: 1152, caption: 'Tabacón hot springs' }
+          ] },
+        { name: 'Guanacaste', type: 'region', note: 'The Riu, Playa Flamingo and the Westin', photos: [
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-01.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-02.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-03.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-04.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-05.webp', w: 2048, h: 1534, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-06.webp', w: 2048, h: 1536, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-07.webp', w: 2048, h: 1152, caption: 'Playa Flamingo' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-08.webp', w: 2048, h: 1152, caption: 'Riu, Guanacaste' },
+            { src: 'assets/media/travel/cri/guanacaste/guanacaste-09.webp', w: 2048, h: 1152, caption: 'The Westin, Guanacaste' }
+          ] },
+        { name: 'Puntarenas', region: 'Puntarenas', photos: [
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-01.webp', w: 2048, h: 1155, caption: 'Puntarenas' },
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-02.webp', w: 2048, h: 1152, caption: 'Puntarenas' },
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-03.webp', w: 2048, h: 1152, caption: 'Puntarenas' },
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-04.webp', w: 2048, h: 1536, caption: 'Puntarenas' },
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-05.webp', w: 2048, h: 1536, caption: 'Puntarenas' },
+            { src: 'assets/media/travel/cri/puntarenas/puntarenas-06.webp', w: 2048, h: 1536, caption: 'Puntarenas' }
+          ] }
       ],
       story: '',
       highlights: [],
       learned: '',
       companions: '',
-      photos: [],
+      photos: [
+        { src: 'assets/media/travel/cri/cri-01.webp', w: 2048, h: 1536, caption: 'A Costa Rican view' },
+        { src: 'assets/media/travel/cri/cri-02.webp', w: 2048, h: 1152, caption: 'Costa Rica' },
+        { src: 'assets/media/travel/cri/cri-03.webp', w: 2048, h: 1152, caption: 'Costa Rica' },
+        { src: 'assets/media/travel/cri/cri-04.webp', w: 2048, h: 1152, caption: 'Costa Rica' },
+        { src: 'assets/media/travel/cri/cri-05.webp', w: 2048, h: 1152, caption: 'Costa Rica' },
+        { src: 'assets/media/travel/cri/cri-06.webp', w: 2048, h: 1535, caption: 'Friends in Costa Rica' },
+        { src: 'assets/media/travel/cri/cri-07.webp', w: 2048, h: 857, caption: 'Costa Rica' }
+      ],
       videos: [],
       related: ['j:ib', 'j:ccecc', 'j:mandarin-host', 'j:translator', 'j:mundo', 'w:mundo-bonito']
     },
@@ -66,7 +112,11 @@ SITE.travel = {
       headline: 'My roots, and a summer of work in Shenyang',
       years: [2026],
       places: [
-        { name: 'Shenyang', region: 'Liaoning', note: 'Overseas Sales / Business Development Intern at HJAT, Jun – Aug 2026' }
+        { name: 'Shenyang', region: 'Liaoning', note: 'Overseas Sales / Business Development Intern at HJAT, Jun – Aug 2026' },
+        { name: 'Shanghai' },
+        { name: 'Changchun', region: 'Jilin' },
+        { name: 'Kunming', region: 'Yunnan' },
+        { name: 'Dali', region: 'Yunnan' }
       ],
       story: '',
       highlights: [],
@@ -79,15 +129,61 @@ SITE.travel = {
     {
       code: 'USA', status: 'current',
       headline: 'Where I study and live now',
+      cover: 'assets/media/travel/usa/boston/boston-02.webp',
       years: [],
       places: [
-        { name: 'Boston', region: 'Massachusetts', note: 'BBA at Hult International Business School — graduating December 2026' }
+        { name: 'Boston', region: 'Massachusetts', note: 'BBA at Hult International Business School — graduating December 2026', photos: [
+            { src: 'assets/media/travel/usa/boston/boston-01.webp', w: 2048, h: 1536, caption: 'Revere Beach' },
+            { src: 'assets/media/travel/usa/boston/boston-02.webp', w: 2048, h: 1536, caption: 'The view from my school’s study room' },
+            { src: 'assets/media/travel/usa/boston/boston-03.webp', w: 2048, h: 1536, caption: 'Museum of Science' },
+            { src: 'assets/media/travel/usa/boston/boston-04.webp', w: 2048, h: 1536, caption: 'Boston Public Library' },
+            { src: 'assets/media/travel/usa/boston/boston-05.webp', w: 2048, h: 1536, caption: 'Boston Public Library' },
+            { src: 'assets/media/travel/usa/boston/boston-06.webp', w: 1536, h: 2048, caption: 'Museum of WNDR' },
+            { src: 'assets/media/travel/usa/boston/boston-07.webp', w: 1536, h: 2048, caption: 'Museum of WNDR' },
+            { src: 'assets/media/travel/usa/boston/boston-08.webp', w: 1536, h: 2048, caption: 'Museum of WNDR' },
+            { src: 'assets/media/travel/usa/boston/boston-09.webp', w: 2048, h: 1536, caption: 'Museum of WNDR' },
+            { src: 'assets/media/travel/usa/boston/boston-10.webp', w: 2048, h: 1536, caption: 'Friends in Boston' },
+            { src: 'assets/media/travel/usa/boston/boston-11.webp', w: 2048, h: 1536, caption: 'Revere Beach' },
+            { src: 'assets/media/travel/usa/boston/boston-12.webp', w: 1152, h: 2048, caption: 'School picture: Hult’s Winter Masquerade' },
+            { src: 'assets/media/travel/usa/boston/boston-13.webp', w: 2048, h: 1152, caption: 'Boston' },
+            { src: 'assets/media/travel/usa/boston/boston-14.webp', w: 2048, h: 1152, caption: 'Isabella Stewart Gardner Museum' },
+            { src: 'assets/media/travel/usa/boston/boston-15.webp', w: 2048, h: 1152, caption: 'The Red Sox at Fenway Park' },
+            { src: 'assets/media/travel/usa/boston/boston-16.webp', w: 2048, h: 1152, caption: 'Boston' }
+          ] },
+        { name: 'Newport', region: 'Rhode Island', coords: [41.47, -71.30], note: 'The Breakers', photos: [
+            { src: 'assets/media/travel/usa/newport/newport-01.webp', w: 1536, h: 2048, caption: 'The Breakers' },
+            { src: 'assets/media/travel/usa/newport/newport-02.webp', w: 2048, h: 1536, caption: 'The Breakers' },
+            { src: 'assets/media/travel/usa/newport/newport-03.webp', w: 2048, h: 1536, caption: 'The Breakers' }
+          ] },
+        { name: 'Minnesota', type: 'region', photos: [
+            { src: 'assets/media/travel/usa/minnesota/minnesota-01.webp', w: 2048, h: 1152, caption: 'Minnesota' },
+            { src: 'assets/media/travel/usa/minnesota/minnesota-02.webp', w: 2048, h: 1152, caption: 'Minnesota' }
+          ] },
+        { name: 'Las Vegas', region: 'Nevada', photos: [
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-01.webp', w: 2048, h: 1536, caption: 'Afterlife: Anyma' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-02.webp', w: 2048, h: 1536, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-03.webp', w: 2048, h: 1536, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-04.webp', w: 1536, h: 2048, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-05.webp', w: 2048, h: 1536, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-06.webp', w: 2048, h: 1536, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-07.webp', w: 2048, h: 1536, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-08.webp', w: 1536, h: 2048, caption: 'Las Vegas' },
+            { src: 'assets/media/travel/usa/las-vegas/las-vegas-09.webp', w: 1536, h: 2048, caption: 'Las Vegas' }
+          ] },
+        { name: 'Los Angeles', region: 'California', photos: [
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-01.webp', w: 1536, h: 2048, caption: 'At the chef’s counter' },
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-02.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' },
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-03.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' },
+            { src: 'assets/media/travel/usa/los-angeles/los-angeles-04.webp', w: 1536, h: 2048, caption: 'Food in Los Angeles' }
+          ] }
       ],
       story: '',
       highlights: [],
       learned: '',
       companions: '',
-      photos: [],
+      photos: [
+        { src: 'assets/media/travel/usa/usa-01.webp', w: 1536, h: 2048, caption: 'Museum of Ice Cream' }
+      ],
       videos: [],
       related: ['j:deans-list', 'j:graduation', 'w:cambridgeside', 'w:duck-tours']
     },
@@ -95,7 +191,16 @@ SITE.travel = {
       code: 'CAN', status: 'visited',
       headline: '',
       years: [],
-      places: [],          // the provinces and cities you visited, e.g. { name: 'Toronto' }
+      cover: 'assets/media/travel/can/toronto/toronto-01.webp',
+      places: [
+        { name: 'Toronto', region: 'Ontario', photos: [
+            { src: 'assets/media/travel/can/toronto/toronto-01.webp', w: 1536, h: 2048, caption: 'Market' },
+            { src: 'assets/media/travel/can/toronto/toronto-02.webp', w: 1536, h: 2048, caption: 'Museum' },
+            { src: 'assets/media/travel/can/toronto/toronto-03.webp', w: 1536, h: 2048, caption: 'Museum' },
+            { src: 'assets/media/travel/can/toronto/toronto-04.webp', w: 1536, h: 2048, caption: 'Museum' },
+            { src: 'assets/media/travel/can/toronto/toronto-05.webp', w: 2048, h: 1536, caption: 'Museum' }
+          ] }
+      ],
       story: '',
       highlights: [],
       learned: '',
@@ -108,7 +213,9 @@ SITE.travel = {
       code: 'KOR', status: 'visited',  // South Korea
       headline: '',
       years: [],
-      places: [],          // e.g. { name: 'Seoul' }
+      places: [
+        { name: 'Seoul' }
+      ],
       story: '',
       highlights: [],
       learned: '',

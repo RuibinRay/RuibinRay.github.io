@@ -14,11 +14,11 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 |---|---|---|
 | Home | The painting, animated in WebGL. The sky flows along its own brushstrokes, the ocean rolls on its own, and the figure and driftwood stay still. Seven painted stars are doorways: point at one and it swells, swirls and glows; click it to fly through it into a section. | `data/site.js` (name, tagline); the doorways are `hotspots` in `assets/js/main.js` |
 | About: *Beyond the Horizon* | "Three cultures. Three languages. One global perspective.": your introduction, four short chapters (Where I'm From, Three Languages, What Drives Me with your five interests, Looking Beyond), an *At a Glance* card with small flags, then education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` → `about` (`tagline`, `intro`, `chapters`, `glance`) |
-| Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year | `data/journey.js` |
-| World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a map of its provinces/states with the cities you've been to, and the photos from each place. On phones the map keeps its full width and is swiped sideways. | `data/travel.js`, photos in `assets/photos/` |
-| Memories | Every photo on the site in one gallery. **It stays hidden until there's at least one photo.** | `assets/photos/`, `data/gallery.js`, `data/travel.js` |
+| Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year. An entry can show photos (the HJAT internship shows the VRFB competition photo, its certificate and the completion letter); they open full size. | `data/journey.js` |
+| World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a cover photo, a map of its provinces/states with the cities you've been to, then the photos from each place as a mosaic (the first one large; long sets show six and a *Show all* button). Photos open full size, sharp on any screen. On phones the map keeps its full width and is swiped sideways. | `data/travel.js`; photos in `assets/media/travel/` (prepared) or `assets/photos/` (uploaded) |
+| Memories | Every photo on the site in one gallery, with filters by kind and country. It opens with 24 photos and a *Show all* button. **It stays hidden until there's at least one photo.** | `data/gallery.js`, `data/travel.js`, `assets/photos/` |
 | Projects: *My Constellations* | Your work as constellations, each star opening a full case study. Below them, *All projects* lists every project by field, each title written on a brushstroke in its field's colour. | `data/work.js` |
-| Skills: *My Palette* | Skills as brushstrokes of paint. Point at a colour (or tap it on a phone, or Tab to it) and the band widens: the skill, its tools and the work where it shows appear beside the paint, while the others dim. Also languages (Mandarin as your primary language, Spanish native, English fluent), certifications and coursework. | `data/palette.js` (the chips are each skill's `tools`); languages are `profile.languages` in `data/site.js` |
+| Skills: *My Palette* | Skills as brushstrokes of paint. Point at a colour (or tap it on a phone, or Tab to it) and the band widens: the skill, its tools and the work where it shows appear beside the paint, while the others dim. Also languages (Mandarin as your primary language, Spanish native, English fluent), your certificates and coursework. Each certificate is shown as an image that opens full size, with a *Verify* link where the issuer has one, and filters by issuer (Internship, Google AI, Finance, DataCamp, Other). | `data/palette.js` (the chips are each skill's `tools`); languages are `profile.languages` and certificates `certifications` in `data/site.js` |
 | *How it all connects* | Every place, milestone, project and skill as one star chart (plain SVG, no chart library). The stars drift gently and the lines follow them. The lines come from the `related` links in your data. On phones the chart keeps its size and is swiped sideways. | the `related` fields |
 | Contact: *Under the Same Sky* | Back to the full painting, with your invitation to connect (`profile.contactLine` in `data/site.js`). Your email and phone numbers sit beside the text (each with a Copy button), with a "Save my contact card" button that downloads a contact card (.vcf) for a phone's address book. Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
 
@@ -39,7 +39,9 @@ Three rules the site follows:
 ### Things still worth adding (open `?draft` to see them all)
 
 - [ ] **The cities and provinces/states you visited** in Canada, South Korea, China and the US: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
-- [ ] **Photos** from each country: see *Adding photos*.
+- [ ] **Photos from China and South Korea** (Costa Rica, the US and Canada have theirs): see *Adding photos*.
+- [ ] **Your teaching role in Costa Rica**: the organization, your role, the dates and any photos, for a new entry in `data/journey.js`.
+- [ ] **The "Tech on the Go: No-Code for Coders" certificate PDF**, so it can show as an image like the others (it's listed as text for now).
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.
 - [ ] **Case-study details**: objective, approach, insights, results, images and links for each project in `data/work.js`.
@@ -83,7 +85,7 @@ Copy one of the entries in `data/work.js` and change it:
 
 ### Adding a journey entry
 
-Copy an entry in `data/journey.js`. `at: 'YYYY-MM'` places the star; `when` is the date as it's displayed; `type` is one of `work`, `education`, `achievement`, `certification`, `project` or `milestone`. Set `upcoming: true` for something that hasn't happened yet. It's drawn as an unlit star.
+Copy an entry in `data/journey.js`. `at: 'YYYY-MM'` places the star; `when` is the date as it's displayed; `type` is one of `work`, `education`, `achievement`, `certification`, `project` or `milestone`. Set `upcoming: true` for something that hasn't happened yet. It's drawn as an unlit star. Add `photos: [{ src, w, h, caption }]` to show images with the entry, and `evidence: 'https://…'` for a link (a certificate's shows as *Verify the certificate*).
 
 ---
 
@@ -106,7 +108,8 @@ Copy an entry in `data/journey.js`. `at: 'YYYY-MM'` places the star; `when` is t
 
 - `status`: `home`, `visited`, `current` (an animated highlight) or `wishlist`.
 - `places`: cities and provinces/states, in English or the local spelling. The country's chapter maps them: the province/state lights up gold and each city gets a star. Add `region: 'Liaoning'` to tell apart places with the same name, or `coords: [lat, lon]` for a spot the map doesn't know (a beach, a park).
-- Photos for a place go in `assets/photos/<CODE>/<place>/`. They appear under that place without editing this file (see *Adding photos*).
+- Photos for a place: list them under the place as `photos: [{ src, w, h, caption }]` (prepared photos in `assets/media/travel/`, see *Prepared photos and certificates*), or upload them to `assets/photos/<CODE>/<place>/`, where they appear without editing this file (see *Adding photos*). Photos of the country in general go in the country's own `photos`.
+- `cover: 'assets/media/…webp'` sets the photo across the top of the country's chapter.
 - Wishlist countries use `reasons`, `hopeToSee`, `activities` and `notes` instead.
 - Codes are ISO 3166-1 alpha-3: `CRI` Costa Rica, `CHN` China, `USA`, `CAN` Canada, `KOR` South Korea, `JPN`, `MEX`, `ESP`, `FRA`, `GBR`… ([full list](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-3)).
 
@@ -144,6 +147,25 @@ assets/photos/<COUNTRY>/<photo>.jpg             the country in general ("Around 
 [`assets/photos/README.md`](assets/photos/README.md) has the details. The site finds new photos by asking GitHub's API for the list of files (GitHub Pages can't list folders by itself). If GitHub doesn't answer, it shows the photos it already knows about.
 
 Photos can also be listed by hand, with a longer caption or a story: in `data/gallery.js` (category, place, date, story) or under a place in `data/travel.js`. Set `public: false` on a listed photo to keep it off the site. The Memories section and its menu link only appear once there's at least one public photo.
+
+### Prepared photos and certificates (`assets/media/`)
+
+The photos from your *Country map* document and your certificates are prepared for the web in three sizes, so every screen gets a sharp image without downloading more than it needs:
+
+```
+assets/media/travel/<country>/<place>/<place>-01.webp      2048 px on the long side (the full-screen viewer)
+assets/media/travel/<country>/<place>/<place>-01-1080.webp  1080 px
+assets/media/travel/<country>/<place>/<place>-01-480.webp   480 px (thumbnails)
+assets/media/travel/<country>/<country>-01.webp             the country in general
+assets/media/life/…  (Memories: friends, Koko)   assets/media/journey/hjat/…   assets/media/certificates/…
+```
+
+In the data files they're listed by the largest file with its width and height, e.g. `{ src: 'assets/media/travel/cri/arenal/arenal-01.webp', w: 1536, h: 2048, caption: 'Kayaking in Arenal' }`. The site works out the other two sizes, and each photo only loads when it comes into view.
+
+To add one, run `python3 tools/prepare_media.py <photo or PDF> assets/media/<folder>/<name>` (add `--cert` for a certificate). It makes the three sizes, turns the photo the right way up, leaves out its camera data and GPS location, and prints the line to paste into the data file.
+
+Your certificates are `certifications` in `data/site.js`: `{ title, issuer, date, group, img, w, h, url }`. `group` is the filter it sits under, `url` the issuer's verification page, and an entry without `img` is listed under *Also completed*.
+
 
 ---
 
@@ -227,7 +249,7 @@ The brushstrokes elsewhere on the page (My Palette, All projects, the interests 
 - Full keyboard navigation with visible focus outlines and a skip link. The homepage star doorways are links: Tab to one and press Enter to travel; Back returns you to where you were. Timeline stars work with arrow keys. The star chart is a single tab stop, moved with the arrow keys and opened with Enter. Every country can be reached through the map search.
 - Respects *Reduce motion*: calmer movement (see above) and a star doorway becomes a short fade. The pause button stops all movement, including the zoom with the scroll. Dialogs trap focus and close with Esc.
 - Type: Fraunces for headings and Instrument Sans for text, on one fluid scale (`--t-2xs` to `--t-4xl` at the top of `assets/css/site.css`) that grows smoothly from a phone to a wide screen instead of jumping at breakpoints.
-- A first visit loads about 1.5 MB on desktop and about 1.1 MB on phones. The world map (~320 KB) loads only as you approach it, and a country's provinces/states (8–95 KB) only when that country is opened.
+- A first visit loads about 1.5 MB on desktop and about 1.1 MB on phones. The world map (~320 KB) loads only as you approach it, and a country's provinces/states (8–95 KB) only when that country is opened. Photos load as they come into view, each in the size the screen needs (480, 1080 or 2048 px), and photos kept behind *Show all* load only once shown.
 - Fonts, map data and libraries are all self-hosted. The one outside request goes to GitHub's API for the list of uploaded photos, at most once every 10 minutes per visitor (GitHub already hosts the site). No trackers, no cookies.
 
 ---
@@ -248,11 +270,12 @@ data/                   ← your content
   regions/                provinces/states and cities of each country (generated, don't edit)
 assets/
   photos/                 ← your photos: <COUNTRY>/<place>/  (see its README)
+  media/                  prepared photos and certificates in three sizes (travel/, life/, journey/, certificates/)
   css/site.css            all styles
   js/                     painting.js · main.js · ui.js · brush.js · places.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
   painting/               the artwork in three sizes, motion maps, embedded.js (local preview)
   fonts/ flags/ img/ vendor/
-tools/                  build_flow_maps.py, make_embedded.py, build_regions.mjs, source/painting-original.jpg
+tools/                  prepare_media.py, build_flow_maps.py, make_embedded.py, build_regions.mjs, source/painting-original.jpg
 site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 ```
 

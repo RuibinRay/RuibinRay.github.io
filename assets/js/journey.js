@@ -206,8 +206,21 @@
     if (has(e.details)) frag.appendChild(h('ul', { class: 'jd__list' }, e.details.map(function (d) { return h('li', { text: d }); })));
     if (has(e.story)) frag.appendChild(h('p', { class: 'muted', text: e.story }));
     else { var p = RJY.ph('a short personal story for this entry — journey.js → ' + e.id + '.story'); if (p) frag.appendChild(p); }
-    if (has(e.photo && e.photo.src)) frag.appendChild(h('img', { src: e.photo.src, alt: e.photo.alt || '', loading: 'lazy', style: { width: '100%', maxWidth: '520px', borderRadius: '2px', margin: '6px 0 12px' } }));
-    if (e.evidence && has(e.evidence)) frag.appendChild(h('p', null, h('a', { class: 'link', href: e.evidence, target: '_blank', rel: 'noopener', text: 'See the evidence' })));
+    var pics = (e.photos || []).filter(function (x) { return x && has(x.src); });
+    if (has(e.photo && e.photo.src)) pics.unshift(e.photo);
+    if (pics.length) {
+      // on phones an odd set of three or more leads with its first photo at full width (see .jd__photos in site.css)
+      var lead = pics.length >= 3 && pics.length % 2 === 1;
+      frag.appendChild(h('div', { class: 'jd__photos' + (pics.length === 1 ? ' is-one' : '') }, pics.map(function (p, k) {
+        var label = p.caption || p.alt || e.title;
+        var sizes = pics.length === 1 ? '(max-width: 700px) 92vw, 520px' : (lead && k === 0 ? '(max-width: 700px) 92vw, 240px' : '(max-width: 700px) 45vw, 240px');
+        return h('button', { type: 'button', class: 'jd__photo', 'aria-label': 'Open image: ' + label, onclick: function () {
+          RJY.lightbox(p, pics.map(function (q) { return Object.assign({ place: e.org || '' }, q); }), pics.indexOf(p));
+        } }, RJY.picture(p, { sizes: sizes, alt: '' }),   // the button's label names the image
+          has(p.caption) ? h('span', { class: 'jd__photo-cap', text: p.caption }) : null);
+      })));
+    }
+    if (e.evidence && has(e.evidence)) frag.appendChild(h('p', null, h('a', { class: 'link', href: e.evidence, target: '_blank', rel: 'noopener', text: e.type === 'certification' ? 'Verify the certificate' : 'See the evidence' })));
     else if (e.type === 'achievement') { var q = RJY.ph('a link to evidence — journey.js → ' + e.id + '.evidence'); if (q) frag.appendChild(q); }
     var c = RJY.connections(e.related); if (c) frag.appendChild(c);
     return frag;

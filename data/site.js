@@ -160,14 +160,34 @@ SITE.awards = [
   }
 ];
 
+// Certificates, newest first. img: the certificate as an image (prepared in three sizes in
+// assets/media/certificates/); url: where it can be verified. Without an image a certificate is
+// listed in text under the gallery. group: the filter it appears under.
 SITE.certifications = [
-  { title: 'HSK Level 7–9', issuer: 'Chinese Proficiency Test', year: '2022', url: '' },
-  { title: 'International Baccalaureate Diploma', issuer: 'Lincoln School, Costa Rica', year: '2023', url: '' },
-  { title: 'Accounting Job Simulation', issuer: 'Koch Industries via Forage', year: '2024', url: '' },
-  { title: 'Foundations of Digital Marketing & E-commerce', issuer: 'Google', year: '2025', url: '' },
-  { title: 'Introduction to Financial Accounting', issuer: 'University of Pennsylvania', year: '2026', url: '' },
-  { title: 'Corporate Governance in US & UK', issuer: 'EDUCBA', year: '2026', url: '' },
-  { title: 'AI Fundamentals', issuer: 'Google', year: '2026', url: '' }
+  { title: 'Certificate of Achievement: Overseas Sales internship', issuer: 'HJAT (恒久安泰), Shenyang', date: 'Aug 2026', group: 'Internship', img: 'assets/media/journey/hjat/hjat-certificate.webp', w: 2048, h: 1502, url: '' },
+  { title: 'AI for Content Creation', issuer: 'Google, on Coursera', date: 'Aug 13, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-content-creation.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/Y8SOP20X8PK4' },
+  { title: 'AI for Writing and Communicating', issuer: 'Google, on Coursera', date: 'Aug 12, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-writing-communicating.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/0I8ME0XMV00T' },
+  { title: 'AI for Research and Insights', issuer: 'Google, on Coursera', date: 'Aug 12, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-research-insights.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/E37EYGLBXA2R' },
+  { title: 'AI for Brainstorming and Planning', issuer: 'Google, on Coursera', date: 'Aug 11, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-brainstorming-planning.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/VWG0J0T3195R' },
+  { title: 'AI Fundamentals', issuer: 'Google, on Coursera', date: 'Aug 10, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-fundamentals.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/GUF526HZ7R46' },
+  { title: 'Corporate Governance in US & UK: Principles & Compliance', issuer: 'EDUCBA, on Coursera', date: 'Mar 29, 2026', group: 'Finance', img: 'assets/media/certificates/educba-corporate-governance.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/LQPJ73PQQLV0' },
+  { title: 'Data Analysis with Excel Power Tools', issuer: 'DataCamp · 10 hours', date: 'Dec 16, 2025', group: 'DataCamp', img: 'assets/media/certificates/datacamp-excel-power-tools.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Excel Fundamentals', issuer: 'DataCamp · 14 hours', date: 'Dec 15, 2025', group: 'DataCamp', img: 'assets/media/certificates/datacamp-excel-fundamentals.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Introduction to Statistics in Python', issuer: 'DataCamp · 4 hours', date: 'Nov 7, 2025', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-statistics-python.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Data-Driven Decision Making for Business', issuer: 'DataCamp · 2 hours', date: 'Nov 6, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-data-driven-decision-making.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Data Analysis in Excel', issuer: 'DataCamp · 3 hours', date: 'Nov 6, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-data-analysis-in-excel.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Understanding Data Science', issuer: 'DataCamp · 2 hours', date: 'Nov 5, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-understanding-data-science.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Introduction to Shell', issuer: 'DataCamp · 4 hours', date: 'May 9, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-shell.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Introduction to SQL', issuer: 'DataCamp · 2 hours', date: 'May 8, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-sql.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Intermediate Python', issuer: 'DataCamp · 4 hours', date: 'Apr 29, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intermediate-python.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Introduction to Python', issuer: 'DataCamp · 4 hours', date: 'Mar 4, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-python.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Voices for Change', issuer: 'Get Inclusive', date: 'Sep 5, 2023', group: 'Other', img: 'assets/media/certificates/voices-for-change.webp', w: 2048, h: 1583, url: 'https://app.getinclusive.com/verify/637879340-69' },
+  { title: 'Introduction to Financial Accounting', issuer: 'University of Pennsylvania', date: '2026', group: 'Finance', img: '', url: '' },
+  { title: 'Foundations of Digital Marketing & E-commerce', issuer: 'Google', date: '2025', group: 'Other', img: '', url: '' },
+  { title: 'Accounting Job Simulation', issuer: 'Koch Industries via Forage', date: '2024', group: 'Finance', img: '', url: '' },
+  { title: 'Tech on the Go: No-Code for Coders', issuer: 'LinkedIn Learning · 24 minutes', date: 'Feb 10, 2024', group: 'Other', img: '', url: '' },
+  { title: 'International Baccalaureate Diploma', issuer: 'Lincoln School, Costa Rica', date: '2023', group: 'Other', img: '', url: '' },
+  { title: 'HSK Level 7–9', issuer: 'Chinese Proficiency Test', date: '2022', group: 'Other', img: '', url: '' }
 ];
 
 SITE.coursework = [

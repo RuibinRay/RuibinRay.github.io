@@ -18,6 +18,7 @@
   render('work', RJY.renderWork);
   render('palette', RJY.renderPalette);
   render('palette-aux', RJY.renderPaletteAux);
+  render('certificates', RJY.renderCertificates);
   render('courses', RJY.renderCourses);
   render('constellation', RJY.renderConstellation);
   render('contact', RJY.renderContact);

@@ -217,13 +217,56 @@
       }))
     ));
     root.appendChild(h('div', { class: 'creds reveal' },
-      h('h3', { text: 'Certifications' }),
-      h('ol', null, SITE.certifications.map(function (c) {
-        var t = has(c.url) ? h('a', { class: 'link t', href: c.url, target: '_blank', rel: 'noopener', text: c.title }) : h('span', { class: 't', text: c.title });
-        return h('li', null, h('span', { class: 'yr', text: c.year }), h('span', null, t, h('span', { class: 'i', text: c.issuer })));
-      })),
+      h('h3', { text: 'Tools I use' }),
       h('div', { class: 'tools-all' }, SITE.tools.map(function (g) { return h('p', { style: { margin: 0 } }, h('b', { text: g.group }), g.items.join(', ')); }))
     ));
+  };
+
+  /* Certificates: each one as an image (click to see it full size, with a link to verify it where
+     there is one), filtered by kind. Certificates without an image are listed in text below. */
+  RJY.renderCertificates = function (root) {
+    var all = (SITE.certifications || []).filter(function (c) { return has(c.title); });
+    var withImg = all.filter(function (c) { return has(c.img); }), textOnly = all.filter(function (c) { return !has(c.img); });
+    var state = 'all';
+    var groups = [];
+    withImg.forEach(function (c) { if (has(c.group) && groups.indexOf(c.group) === -1) groups.push(c.group); });
+    function asPhoto(c) {
+      return { src: c.img, w: c.w, h: c.h, alt: 'Certificate: ' + c.title + ', ' + c.issuer, caption: c.title, place: c.issuer, date: c.date,
+        link: has(c.url) ? { href: c.url, label: 'Verify' } : null };
+    }
+    var grid = h('ul', { class: 'certs__grid', role: 'list' }, withImg.map(function (c, i) {
+      var li = h('li', { class: 'cert', 'data-group': c.group || '' },
+        h('button', { type: 'button', class: 'cert__img', 'aria-label': 'View the certificate: ' + c.title, onclick: function () {
+          var shown = withImg.filter(function (x) { return state === 'all' || x.group === state; });
+          RJY.lightbox(asPhoto(c), shown.map(asPhoto), shown.indexOf(c));
+        } }, RJY.picture({ src: c.img, w: c.w, h: c.h }, { sizes: '(max-width: 640px) 92vw, 300px', alt: '' })),
+        h('div', { class: 'cert__meta' },
+          h('p', { class: 'cert__title', text: c.title }),
+          h('p', { class: 'cert__by', text: [c.issuer, c.date].filter(has).join(' · ') }),
+          has(c.url) ? h('a', { class: 'cert__verify', href: c.url, target: '_blank', rel: 'noopener', 'aria-label': 'Verify ' + c.title + ' (opens in a new tab)', text: 'Verify' }) : null));
+      return li;
+    }));
+    var chips = groups.length > 1 ? h('div', { class: 'filters', role: 'group', 'aria-label': 'Filter certificates' },
+      [['all', 'All']].concat(groups.map(function (g) { return [g, g]; })).map(function (pair) {
+        return h('button', { class: 'chip', type: 'button', 'data-value': pair[0], 'aria-pressed': String(pair[0] === 'all'), text: pair[1], onclick: function () {
+          state = pair[0];
+          chips.querySelectorAll('.chip').forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.value === state)); });
+          grid.querySelectorAll('.cert').forEach(function (li) { li.hidden = !(state === 'all' || li.dataset.group === state); });
+        } });
+      })) : null;
+    root.appendChild(h('div', { class: 'certs__head' },
+      h('h3', { text: 'Certificates' }),
+      h('span', { class: 'muted', text: all.length + ' in all' })));
+    if (chips) root.appendChild(chips);
+    root.appendChild(grid);
+    if (textOnly.length) {
+      root.appendChild(h('div', { class: 'certs__also' },
+        h('h4', { text: 'Also completed' }),
+        h('ul', { role: 'list' }, textOnly.map(function (c) {
+          var t = has(c.url) ? h('a', { class: 'link', href: c.url, target: '_blank', rel: 'noopener', text: c.title }) : h('span', { class: 't', text: c.title });
+          return h('li', null, t, h('span', { class: 'i', text: [c.issuer, c.date].filter(has).join(' · ') }));
+        }))));
+    }
   };
 
   RJY.renderCourses = function (root) {

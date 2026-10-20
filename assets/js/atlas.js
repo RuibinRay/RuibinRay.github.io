@@ -432,9 +432,23 @@
     });
   }
 
+  // The photo across the top of a country: its `cover`, or else the first photo found for it.
+  function coverFor(c) {
+    if (!c) return null;
+    if (has(c.cover)) {
+      var all = [].concat(c.photos || []);
+      (c.places || []).forEach(function (pl) { all = all.concat(pl.photos || []); });
+      return all.filter(function (x) { return x && x.src === c.cover; })[0] || { src: c.cover };
+    }
+    var first = null;
+    (c.places || []).some(function (pl) { return (first = (pl.photos || [])[0] || null); });
+    return first || (c.photos || [])[0] || null;
+  }
+
   function countryView(code, c, st) {
-    var flag = RJY.flagSrc(code);
-    var el = h('div', { class: 'cp' },
+    var flag = RJY.flagSrc(code), cover = LIT[st] ? coverFor(c) : null;
+    var el = h('div', { class: 'cp' + (cover ? ' has-cover' : '') },
+      cover ? h('figure', { class: 'cp__cover' }, RJY.picture(cover, { full: true, eager: true, sizes: '(max-width: 640px) 100vw, 640px', alt: '' })) : null,
       flag ? h('img', { class: 'cp__flag', src: flag, alt: 'Flag of ' + nameOf(code), width: 56, height: 42 }) : null,
       h('p', { class: 'cp__status' }, h('i', { style: { background: STATUS_DOT[st], boxShadow: '0 0 8px ' + STATUS_DOT[st] } }), STATUS_TEXT[st]),
       h('h2', { class: 'cp__name', text: nameOf(code) }));
@@ -476,15 +490,55 @@
     if (has(val)) { el.appendChild(h('h3', { text: title })); el.appendChild(render(val)); }
     else if (hint) { var p = RJY.ph(hint); if (p) { el.appendChild(h('h3', { text: title })); el.appendChild(p); } }
   }
+  // A place's photos as a mosaic: the first one large, the rest in a grid. Long sets show six
+  // and a button for the rest. Captions show on the photos unless they only repeat the place's name.
+  var SHOW = 6;
+  // how wide each kind of tile is drawn (the drawer is 600 px wide on large screens), so the
+  // browser picks the right file: 480, 1080 or 2048 px
+  var TILE = {
+    one: '(max-width: 640px) 90vw, 500px', half: '(max-width: 640px) 45vw, 250px',
+    big: '(max-width: 640px) 60vw, 335px', small: '(max-width: 640px) 30vw, 165px',
+    wide2: '(max-width: 640px) 60vw, 335px', wide3: '(max-width: 640px) 90vw, 500px'
+  };
+  // the last photo widens to fill its row: two beside the large photo, then rows of three
+  function fitMosaic(grid) {
+    var vis = Array.prototype.filter.call(grid.children, function (b) { return !b.hidden; });
+    vis.forEach(function (b) { b.classList.remove('is-wide2', 'is-wide3'); });
+    var small = vis.length - 1;
+    if (vis.length < 3 || small < 2) return;
+    var rem = (small - 2) % 3;
+    if (!rem) return;
+    var last = vis[vis.length - 1], wide = rem === 1 ? 'wide3' : 'wide2', img = last.querySelector('img');
+    last.classList.add('is-' + wide);
+    // a wider tile needs a larger file (a tile that narrows again keeps the one it has)
+    if (img && img.getAttribute('sizes') === TILE.small) img.setAttribute('sizes', TILE[wide]);
+  }
   function gallery(list, place) {
-    return h('div', { class: 'cp__gallery' }, list.map(function (p) {
+    var n = list.length, more = n > SHOW + 1;
+    var grid = h('div', { class: 'cp__gallery' + (n === 1 ? ' is-one' : n === 2 ? ' is-two' : '') });
+    list.forEach(function (p, k) {
       var label = p.caption || p.alt || (place ? 'Photo from ' + place : 'Photo');
-      var b = h('button', { type: 'button', 'aria-label': 'Open photo: ' + label, onclick: function () {
+      var big = k === 0 && n > 2;
+      var b = h('button', { type: 'button', class: 'cp__shot' + (big ? ' is-big' : ''), hidden: more && k >= SHOW ? true : null, 'aria-label': 'Open photo: ' + label, onclick: function () {
         var ok = list.filter(function (q) { return !q.broken; });
         RJY.lightbox(p, ok, ok.indexOf(p));
-      } }, h('img', { src: p.src, alt: p.alt || label, loading: 'lazy', decoding: 'async', onerror: function () { p.broken = true; b.hidden = true; } }));
-      return b;
-    }));
+      } },
+        // alt is empty: the button's label already names the photo
+        RJY.picture(p, { sizes: TILE[n === 1 ? 'one' : n === 2 ? 'half' : big ? 'big' : 'small'], alt: '', onerror: function () { p.broken = true; b.hidden = true; b.setAttribute('data-broken', ''); } }),
+        has(p.caption) && (!place || RJY.places.norm(p.caption) !== RJY.places.norm(place)) ? h('span', { class: 'cp__shot-cap', text: p.caption }) : null);
+      grid.appendChild(b);
+    });
+    if (n > 2) fitMosaic(grid);
+    if (!more) return grid;
+    var btn = h('button', { type: 'button', class: 'cp__more', text: 'Show all ' + n + ' photos', onclick: function (e) {
+      var added = grid.querySelectorAll('.cp__shot[hidden]:not([data-broken])');
+      added.forEach(function (x) { x.hidden = false; });
+      fitMosaic(grid);
+      // focus stays in the drawer, on the first new photo (scrolled to only when the keyboard was used)
+      if (added[0]) added[0].focus({ preventScroll: e.detail !== 0 });
+      btn.remove();
+    } });
+    return h('div', null, grid, btn);
   }
 
   /* ---------- places: provinces/states, cities and their photos ----------
@@ -544,12 +598,16 @@
     groups.forEach(function (g) {
       var sec = h('section', { class: 'cp__region', 'data-key': g.key });
       var regionName = g.region ? g.region.name : (groups.length > 1 ? 'Other places' : '');
-      if (regionName) sec.appendChild(h('h4', { class: 'cp__region-name' }, regionName, g.region && g.region.kind ? h('span', { class: 'cp__region-kind', text: g.region.kind }) : null));
+      var head = regionName ? h('h4', { class: 'cp__region-name' }, regionName, g.region && g.region.kind ? h('span', { class: 'cp__region-kind', text: g.region.kind }) : null) : null;
+      if (head) sec.appendChild(head);
       g.items.forEach(function (x) {
         // a place that is the province/state itself (Seoul, Beijing…) sits right under its heading
         var p = x.p, own = g.region && (x.r.isRegion || (g.items.length === 1 && RJY.places.norm(p.name) === RJY.places.norm(g.region.name)));
         var art = h('article', { class: 'cp__place' + (own ? ' is-region' : ''), 'data-place': RJY.places.slug(p.name) });
-        if (!own) art.appendChild(h('h5', { class: 'cp__place-name' }, h('span', { class: 'cp__place-star', html: RJY.starIcon() }), p.name));
+        var count = p.photos.length ? h('span', { class: 'cp__count', text: p.photos.length + (p.photos.length === 1 ? ' photo' : ' photos') }) : null;
+        if (!own) art.appendChild(h('h5', { class: 'cp__place-name' }, h('span', { class: 'cp__place-star', html: RJY.starIcon() }), p.name, count));
+        else if (count && head && g.items.length === 1) head.appendChild(count);   // its count sits on the heading's line
+        else if (count) art.appendChild(h('p', { class: 'cp__place-name is-own' }, count));
         if (has(p.note)) art.appendChild(h('p', { class: 'cp__place-note', text: p.note }));
         if (has(p.story)) art.appendChild(h('p', { class: 'cp__place-story', text: p.story }));
         if (p.photos.length) art.appendChild(gallery(p.photos.map(function (ph) { return Object.assign({ place: p.name + ', ' + plain }, ph); }), p.name));

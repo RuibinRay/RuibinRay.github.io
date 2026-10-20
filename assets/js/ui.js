@@ -58,6 +58,35 @@
   RJY.starIcon = function (cls) {
     return '<svg class="' + (cls || '') + '" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 1.5l1.6 7.3 7.4 1.6-7.4 1.6L12 19.5l-1.6-7.5L3 10.4l7.4-1.6z"/></svg>';
   };
+  /* ---------- images ----------
+     Photos and certificates prepared in assets/media/ come in three sizes: name.webp (2048 px on the
+     long side), name-1080.webp and name-480.webp. Other images (e.g. uploads to assets/photos/) are
+     used as they are. RJY.picture builds an <img> that lets the browser pick the size it needs. */
+  function sized(p) { return /^assets\/media\/.+\.webp$/.test((p && p.src) || ''); }
+  RJY.img = {
+    sized: sized,
+    small: function (p) { return sized(p) ? p.src.replace(/\.webp$/, '-480.webp') : p.src; },
+    mid: function (p) { return sized(p) ? p.src.replace(/\.webp$/, '-1080.webp') : p.src; },
+    // each file's real width (the sizes are the long side, so a portrait photo's files are narrower)
+    srcset: function (p) {
+      if (!sized(p)) return null;
+      var W = +p.w || 2048, L = Math.max(W, +p.h || 0);
+      function wide(k) { return Math.round(W * Math.min(1, k / L)); }
+      return RJY.img.small(p) + ' ' + wide(480) + 'w, ' + RJY.img.mid(p) + ' ' + wide(1080) + 'w, ' + p.src + ' ' + W + 'w';
+    }
+  };
+  RJY.picture = function (p, o) {
+    o = o || {};
+    // loading, sizes and srcset go on before src: Chrome starts fetching as soon as src is set if it is not yet told to wait
+    var img = h('img', {
+      loading: o.eager ? null : 'lazy', decoding: 'async', class: o.cls || null,
+      width: p.w || null, height: p.h || null, alt: o.alt != null ? o.alt : (p.alt || p.caption || ''),
+      sizes: RJY.img.srcset(p) ? (o.sizes || '240px') : null, srcset: RJY.img.srcset(p), src: o.full ? RJY.img.mid(p) : RJY.img.small(p)
+    });
+    if (o.onerror) img.addEventListener('error', o.onerror);
+    return img;
+  };
+
   RJY.brushRule = function () {
     return '<svg class="brush-rule" viewBox="0 0 360 10" preserveAspectRatio="none" aria-hidden="true"><path d="M2 6.5C40 3 78 7.6 120 5.2S205 2.6 246 5.4 318 7.4 358 4" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>';
   };
@@ -178,19 +207,34 @@
     var i = Math.max(0, index != null ? index : list.indexOf(photo));
     var prevFocus = document.activeElement, sx = null;
     var close = function () { lb.hidden = true; lb.innerHTML = ''; document.removeEventListener('keydown', onKey); RJY.lockScroll(false); if (prevFocus && prevFocus.focus) prevFocus.focus(); };
+    // how wide the photo will be drawn: the screen's width, or less when its height (80vh) is the limit
+    function sizesFor(q) {
+      var r = q.w && q.h ? q.w / q.h : 0, byH = r ? ', calc(80vh * ' + r.toFixed(3) + ')' : '';
+      return '(max-width: 700px) min(100vw' + byH + '), min(90vw, 1600px' + byH + ')';
+    }
+    function warm(q) {   // fetch a neighbour ahead of time, at the size this screen will use
+      if (!q || !RJY.img.sized(q)) return;
+      var w = new Image(); w.sizes = sizesFor(q); w.srcset = RJY.img.srcset(q); w.src = RJY.img.mid(q);
+    }
     var show = function (k) {
       i = (k + list.length) % list.length;
       var p = list[i];
-      img.src = p.src; img.alt = p.alt || p.caption || (p.place ? 'Photo from ' + p.place : 'Photo');
+      img.classList.add('is-loading');
+      img.removeAttribute('srcset');
+      if (p.w && p.h) { img.width = p.w; img.height = p.h; } else { img.removeAttribute('width'); img.removeAttribute('height'); }
+      if (RJY.img.sized(p)) { img.sizes = sizesFor(p); img.srcset = RJY.img.srcset(p); img.src = RJY.img.mid(p); } else { img.removeAttribute('sizes'); img.src = p.src; }
+      img.alt = p.alt || p.caption || (p.place ? 'Photo from ' + p.place : 'Photo');
       cap.innerHTML = '';
-      var line = [p.caption, p.place, p.date ? RJY.monthYear(p.date) : ''].filter(RJY.has).join(' — ');
+      var line = [p.caption, p.place, p.date ? (/^\d{4}-\d{2}/.test(p.date) ? RJY.monthYear(p.date) : p.date) : ''].filter(RJY.has).join(' — ');
       if (line) cap.appendChild(document.createTextNode(line));
+      if (p.link && p.link.href) { cap.appendChild(document.createTextNode(' ')); cap.appendChild(h('a', { class: 'link', href: p.link.href, target: '_blank', rel: 'noopener', text: p.link.label || 'Open' })); }
       if (RJY.has(p.story)) cap.appendChild(h('p', { text: p.story }));
       count.textContent = list.length > 1 ? (i + 1) + ' / ' + list.length : '';
+      if (list.length > 1) { warm(list[(i + 1) % list.length]); warm(list[(i - 1 + list.length) % list.length]); }
     };
     var onKey = function (e) {
       if (e.key === 'Tab') {   // keep focus inside the viewer
-        var f = lb.querySelectorAll('button'); if (!f.length) return;
+        var f = lb.querySelectorAll('button, a[href]'); if (!f.length) return;
         var first = f[0], last = f[f.length - 1];
         if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
         else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
@@ -202,7 +246,9 @@
       else if (e.key === 'ArrowLeft' && list.length > 1) show(i - 1);
     };
     lb.innerHTML = '';
-    var img = h('img', { alt: '' }), cap = h('figcaption'), count = h('span', { class: 'lightbox__count', 'aria-live': 'polite' });
+    var img = h('img', { alt: '', decoding: 'async' }), cap = h('figcaption'), count = h('span', { class: 'lightbox__count', 'aria-live': 'polite' });
+    img.addEventListener('load', function () { img.classList.remove('is-loading'); });
+    img.addEventListener('error', function () { img.classList.remove('is-loading'); });
     lb.appendChild(h('figure', null, img, cap));
     var icon = function (d) { return '<svg viewBox="0 0 14 14" aria-hidden="true"><path d="' + d + '" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>'; };
     var btn = h('button', { class: 'sheet__close', type: 'button', 'aria-label': 'Close photo', onclick: close, html: icon('M1 1l12 12M13 1L1 13') });

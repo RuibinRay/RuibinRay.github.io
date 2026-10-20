@@ -97,6 +97,7 @@
       group('country', 'Filter by country', countries, function (c) { return RJY.countryName(c); }),
       group('year', 'Filter by year', years)].forEach(function (g) { if (g) root.appendChild(g); });
     var grid = h('div', { class: 'gallery' });
+    var LIMIT = 24, expanded = false;   // a long set opens with its first 24 photos
     function matches(p) {
       return (state.cat === 'all' || p.category === state.cat) && (state.country === 'all' || p.country === state.country) &&
         (state.year === 'all' || String(p.date || '').slice(0, 4) === state.year);
@@ -109,21 +110,34 @@
           var shown = photos.filter(function (q) { return !q.broken && matches(q); });
           RJY.lightbox(p, shown, shown.indexOf(p));
         } },
-          h('img', { src: p.src, alt: p.alt || label, loading: 'lazy', decoding: 'async', onerror: function () { p.broken = true; fig.hidden = true; } })),
+          RJY.picture(p, { sizes: '(max-width: 640px) 92vw, (max-width: 1000px) 45vw, 380px', alt: p.alt || label, onerror: function () { p.broken = true; fig.hidden = true; } })),
         has(p.caption) || meta ? h('figcaption', null, has(p.caption) ? h('span', { text: p.caption }) : null, meta ? h('small', { text: meta }) : null) : null);
       grid.appendChild(fig);
     });
     root.appendChild(grid);
     root.appendChild(h('p', { class: 'gallery__empty muted', hidden: true, text: 'No photos match those filters.' }));
+    var moreBtn = h('button', { class: 'btn btn--ghost gallery__more', type: 'button', hidden: true, onclick: function (e) {
+      var before = Array.prototype.filter.call(grid.children, function (el) { return el.hidden; });
+      expanded = true; apply();
+      // from the keyboard: carry on at the first photo that just appeared (the button itself goes away)
+      var first = before.filter(function (el) { return !el.hidden; })[0];
+      if (e.detail === 0 && first) first.querySelector('button').focus();
+    } });
+    root.appendChild(h('p', { class: 'gallery__more-row' }, moreBtn));
     function apply() {
-      var shown = 0;
+      var shown = 0, total = 0;
       grid.querySelectorAll('.gallery__item').forEach(function (el) {
         var p = photos[+el.dataset.i];
         var ok = !p.broken && matches(p);
+        if (ok) total++;
+        ok = ok && (expanded || total <= LIMIT);
         el.hidden = !ok; if (ok) shown++;
       });
       root.querySelector('.gallery__empty').hidden = shown > 0;
+      moreBtn.hidden = expanded || total <= LIMIT;
+      moreBtn.textContent = 'Show all ' + total + ' photos';
     }
+    apply();
     if (RJY.reveal) RJY.reveal(root);
   }
 })();

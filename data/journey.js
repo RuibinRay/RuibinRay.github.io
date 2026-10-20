@@ -10,6 +10,8 @@
  *   title     title;  org: organization;  place: city/country text;  country: ISO alpha-3 (links to the map)
  *   summary   one or two sentences;  details: list of bullet points (only real, documented facts)
  *   story     a longer personal note ('' hides it);  photo: { src, alt } ('' hides it)
+ *   photos    several images: list of { src, w, h, caption } (opened in the photo viewer)
+ *   evidence  a link to a certificate, verification page or announcement
  *   related   ids of connected stars: 'w:<project id>', 'c:<country code>', 's:<skill id>', 'j:<journey id>'
  *   upcoming  true for something that hasn't happened yet (drawn as an unlit star)
  */
@@ -105,17 +107,21 @@ SITE.journey = [
     related: ['s:finance']
   },
   {
-    id: 'educba', short: 'Corporate Governance', at: '2026-02', when: '2026', type: 'certification',
+    id: 'educba', short: 'Corporate Governance', at: '2026-03', when: 'Mar 2026', type: 'certification',
     title: 'Corporate Governance in US & UK', org: 'EDUCBA', place: '', country: '',
-    summary: 'Completed EDUCBA’s Corporate Governance in US & UK.',
+    summary: 'Completed EDUCBA’s Corporate Governance in US & UK: Principles & Compliance, on Coursera.',
     details: [], story: '', photo: { src: '', alt: '' },
+    photos: [{ src: 'assets/media/certificates/educba-corporate-governance.webp', w: 2048, h: 1583, caption: 'Corporate Governance in US & UK, EDUCBA on Coursera' }],
+    evidence: 'https://coursera.org/verify/LQPJ73PQQLV0',
     related: ['s:finance']
   },
   {
-    id: 'google-ai', short: 'Google AI', at: '2026-03', when: '2026', type: 'certification',
+    id: 'google-ai', short: 'Google AI', at: '2026-08', when: 'Aug 2026', type: 'certification',
     title: 'AI Fundamentals', org: 'Google', place: '', country: '',
-    summary: 'Completed Google’s AI Fundamentals.',
+    summary: 'Completed Google’s AI Fundamentals on Coursera, followed by four more Google courses: AI for Brainstorming and Planning, AI for Research and Insights, AI for Writing and Communicating, and AI for Content Creation.',
     details: [], story: '', photo: { src: '', alt: '' },
+    photos: [{ src: 'assets/media/certificates/google-ai-fundamentals.webp', w: 2048, h: 1583, caption: 'AI Fundamentals, Google on Coursera' }],
+    evidence: 'https://coursera.org/verify/GUF526HZ7R46',
     related: ['s:ai']
   },
   {
@@ -132,10 +138,26 @@ SITE.journey = [
       'Study guides: 30 energy storage guides (10 technologies × 3 languages) produced through an automated Node.js pipeline',
       'LinkedIn outreach: ranked 1st in the department, with 200+ connections across 6+ countries',
       'Training: taught colleagues to use LinkedIn, VPN and AI tools, and wrote a Mandarin AI tools guide',
-      'Quality control: caught a misattributed product and inflated market data before they went into deliverables'
+      'Quality control: caught a misattributed product and inflated market data before they went into deliverables',
+      '1st place in the VRFB knowledge competition'
     ],
     story: '', photo: { src: '', alt: '' },
-    related: ['c:CHN', 'w:market-maps', 'w:tenders', 'w:lifecycle', 'w:proposals', 'w:study-guides', 'w:outreach', 's:intl-bd', 's:market-research']
+    photos: [
+      { src: 'assets/media/journey/hjat/vrfb-knowledge-competition.webp', w: 1706, h: 1279, caption: '1st place in the VRFB knowledge competition' },
+      { src: 'assets/media/journey/hjat/hjat-certificate.webp', w: 2048, h: 1502, caption: 'Certificate of Achievement' },
+      { src: 'assets/media/journey/hjat/hjat-completion-letter.webp', w: 1381, h: 2048, caption: 'Internship completion letter' }
+    ],
+    related: ['c:CHN', 'j:vrfb-competition', 'w:market-maps', 'w:tenders', 'w:lifecycle', 'w:proposals', 'w:study-guides', 'w:outreach', 's:intl-bd', 's:market-research']
+  },
+  {
+    id: 'vrfb-competition', short: '1st place, VRFB', at: '2026-07', when: '2026', type: 'achievement',
+    title: '1st place in the VRFB knowledge competition', org: 'HJAT (恒久安泰)', place: 'Shenyang, China', country: 'CHN',
+    summary: 'Won first place in the VRFB knowledge competition during my internship at HJAT in Shenyang.',
+    details: [], story: '', photo: { src: '', alt: '' },
+    photos: [
+      { src: 'assets/media/journey/hjat/vrfb-knowledge-competition.webp', w: 1706, h: 1279, caption: '1st place in the VRFB knowledge competition' }
+    ],
+    related: ['j:hjat', 'c:CHN', 's:intl-bd']
   },
   {
     id: 'graduation', short: 'Graduation', at: '2026-12', when: 'December 2026', type: 'education', upcoming: true,
