@@ -13,14 +13,14 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 | Section | What it is | Edit it in |
 |---|---|---|
 | Home | The painting, animated in WebGL. The sky flows along its own brushstrokes, the ocean rolls on its own, and the figure and driftwood stay still. Seven painted stars are doorways: point at one and it swells, swirls and glows; click it to fly through it into a section. | `data/site.js` (name, tagline); the doorways are `hotspots` in `assets/js/main.js` |
-| About: *Beyond the Horizon* | Your story, the at-a-glance facts, education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` |
+| About: *Beyond the Horizon* | "Three cultures. Three languages. One global perspective.": your introduction, four short chapters (Where I'm From, Three Languages, What Drives Me with your five interests, Looking Beyond), an *At a Glance* card with small flags, then education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` → `about` (`tagline`, `intro`, `chapters`, `glance`) |
 | Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year | `data/journey.js` |
 | World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a map of its provinces/states with the cities you've been to, and the photos from each place. On phones the map keeps its full width and is swiped sideways. | `data/travel.js`, photos in `assets/photos/` |
 | Memories | Every photo on the site in one gallery. **It stays hidden until there's at least one photo.** | `assets/photos/`, `data/gallery.js`, `data/travel.js` |
-| Projects: *My Constellations* | Your work as constellations, each star opening a full case study | `data/work.js` |
-| Skills: *My Palette* | Skills as bands of paint. Point at a colour (or tap it on a phone, or Tab to it) and it widens to show the skill, its tools and the work where it shows, while the others dim. Also languages, certifications and coursework. | `data/palette.js` (the chips are each skill's `tools`), `data/site.js` |
+| Projects: *My Constellations* | Your work as constellations, each star opening a full case study. Below them, *All projects* lists every project by field, each title written on a brushstroke in its field's colour. | `data/work.js` |
+| Skills: *My Palette* | Skills as brushstrokes of paint. Point at a colour (or tap it on a phone, or Tab to it) and the band widens: the skill, its tools and the work where it shows appear beside the paint, while the others dim. Also languages (Mandarin as your primary language, Spanish native, English fluent), certifications and coursework. | `data/palette.js` (the chips are each skill's `tools`); languages are `profile.languages` in `data/site.js` |
 | *How it all connects* | Every place, milestone, project and skill as one star chart (plain SVG, no chart library). The stars drift gently and the lines follow them. The lines come from the `related` links in your data. On phones the chart keeps its size and is swiped sideways. | the `related` fields |
-| Contact: *Under the Same Sky* | Back to the full painting. Your email and phone numbers sit beside the text (each with a Copy button), with a "Save my contact card" button that downloads a contact card (.vcf) for a phone's address book. Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
+| Contact: *Under the Same Sky* | Back to the full painting, with your invitation to connect (`profile.contactLine` in `data/site.js`). Your email and phone numbers sit beside the text (each with a Copy button), with a "Save my contact card" button that downloads a contact card (.vcf) for a phone's address book. Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
 
 Everything links to everything: a project opens the country where it happened, a country opens the jobs you did there, a skill opens the projects that used it. That's the constellation.
 
@@ -42,7 +42,6 @@ Three rules the site follows:
 - [ ] **Photos** from each country: see *Adding photos*.
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.
-- [ ] **"Problems I enjoy solving"** and **"What I hope to build"**: `data/site.js` → `about.blocks`.
 - [ ] **Case-study details**: objective, approach, insights, results, images and links for each project in `data/work.js`.
 - [ ] **Evidence for the Hult Future Leaders Challenge**: `awards[0].evidence` in `data/site.js`.
 - [ ] **Your wishlist and travel stories**: see *Updating the atlas* below.
@@ -219,6 +218,8 @@ The motion maps are tailored to this painting. If you replace the artwork, regen
 
 The artwork was upscaled 4× with Real-ESRGAN, so it stays sharp on large screens.
 
+The brushstrokes elsewhere on the page (My Palette, All projects, the interests in About) are drawn by `assets/js/brush.js`: each stroke is painted as SVG at the size it is shown, starting with a rounded, loaded tip and running out into dry bristle marks, so none is stretched or cut off. The same `seed` always paints the same stroke.
+
 ---
 
 ## Accessibility and performance
@@ -248,7 +249,7 @@ data/                   ← your content
 assets/
   photos/                 ← your photos: <COUNTRY>/<place>/  (see its README)
   css/site.css            all styles
-  js/                     painting.js · main.js · ui.js · places.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
+  js/                     painting.js · main.js · ui.js · brush.js · places.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
   painting/               the artwork in three sizes, motion maps, embedded.js (local preview)
   fonts/ flags/ img/ vendor/
 tools/                  build_flow_maps.py, make_embedded.py, build_regions.mjs, source/painting-original.jpg

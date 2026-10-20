@@ -7,33 +7,75 @@
   var RJY = window.RJY, SITE = window.SITE, h = RJY.h, has = RJY.has;
 
   /* ---------------- About ---------------- */
+  // Small flags for "At a Glance" (decorative: the text already names the country).
+  function starPts(cx, cy, R, rot) {
+    var p = [];
+    for (var i = 0; i < 10; i++) {
+      var r = i % 2 ? R * 0.382 : R, a = rot + i * Math.PI / 5;
+      p.push((cx + r * Math.sin(a)).toFixed(2) + ',' + (cy - r * Math.cos(a)).toFixed(2));
+    }
+    return p.join(' ');
+  }
+  var FLAGS = {
+    CRI: function () { return '<svg viewBox="0 0 30 18"><rect width="30" height="18" fill="#002b7f"/><rect y="3" width="30" height="12" fill="#fff"/><rect y="6" width="30" height="6" fill="#ce1126"/></svg>'; },
+    CHN: function () {
+      var small = [[10, 2], [12, 4], [12, 7], [10, 9]].map(function (c) {
+        return '<polygon fill="#ffde00" points="' + starPts(c[0], c[1], 1, Math.atan2(5 - c[0], -(5 - c[1]))) + '"/>';
+      }).join('');
+      return '<svg viewBox="0 0 30 20"><rect width="30" height="20" fill="#ee1c25"/><polygon fill="#ffde00" points="' + starPts(5, 5, 3, 0) + '"/>' + small + '</svg>';
+    },
+    USA: function () {
+      var st = '', i, j;
+      for (i = 0; i < 13; i += 2) st += '<rect y="' + (i * 20 / 13).toFixed(2) + '" width="38" height="' + (20 / 13).toFixed(2) + '" fill="#b22234"/>';
+      var dots = '';
+      for (j = 0; j < 9; j++) for (i = 0; i < (j % 2 ? 5 : 6); i++) dots += '<circle cx="' + (1.3 + i * 2.5 + (j % 2 ? 1.25 : 0)).toFixed(2) + '" cy="' + (1.1 + j * 1.07).toFixed(2) + '" r=".42" fill="#fff"/>';
+      return '<svg viewBox="0 0 38 20"><rect width="38" height="20" fill="#fff"/>' + st + '<rect width="15.2" height="10.77" fill="#3c3b6e"/>' + dots + '</svg>';
+    }
+  };
+  function flag(code) { return FLAGS[code] ? h('span', { class: 'flag', 'aria-hidden': 'true', html: FLAGS[code]() }) : null; }
+  // text with any Chinese wrapped so it gets a Chinese font and is read in Chinese
+  function withScripts(text) {
+    return String(text).split(/([\u3400-\u9fff\uf900-\ufaff]+)/).filter(has).map(function (part) {
+      return /[\u3400-\u9fff\uf900-\ufaff]/.test(part) ? h('span', { class: 'zh', lang: 'zh', text: part }) : document.createTextNode(part);
+    });
+  }
+
   RJY.renderAbout = function (root) {
-    var A = SITE.about, P = SITE.profile;
-    var blocks = A.blocks.map(function (b) {
-      if (!has(b.text)) return RJY.draft ? h('div', { class: 'about__block' }, h('h3', { text: b.title }), RJY.ph('your answer — data/site.js → about.blocks')) : null;
-      return h('div', { class: 'about__block reveal' }, h('h3', { text: b.title }), h('p', { text: b.text }));
-    });
-    var langs = P.languages.map(function (l) {
-      return l.native === '中文' ? h('span', null, 'Mandarin ', h('span', { class: 'zh', lang: 'zh', text: '中文' })) : h('span', { text: l.name });
-    });
-    var langLine = h('dd');
-    langs.forEach(function (n, i) { if (i) langLine.appendChild(document.createTextNode(i === langs.length - 1 ? ' and ' : ', ')); langLine.appendChild(n); });
-    var coords = h('dl', { class: 'coords reveal' },
-      h('div', null, h('dt', { text: 'Born in' }), h('dd', { text: P.bornIn })),
-      h('div', null, h('dt', { text: 'Roots in' }), h('dd', { text: P.roots })),
-      h('div', null, h('dt', { text: 'Based in' }), h('dd', { text: P.basedIn })),
-      h('div', null, h('dt', { text: 'Speaks' }), langLine),
-      h('div', null, h('dt', { text: 'Graduating' }), h('dd', { text: P.graduation })),
-      h('div', null, h('dt', { text: 'Focus' }), h('dd', { text: P.focus + '. ' + P.relocation }))
-    );
+    var A = SITE.about;
+    var head = root.closest('section') && root.closest('section').querySelector('.sec__head');
+    if (head && has(A.tagline) && !head.querySelector('.about__tagline')) head.appendChild(h('p', { class: 'about__tagline', text: A.tagline }));
+
+    root.appendChild(h('div', { class: 'about__intro reveal' }, (A.intro || []).filter(has).map(function (t, i) {
+      return h('p', { class: i ? 'about__more' : 'about__lead', text: t });
+    })));
+
+    var chapters = h('div', { class: 'about__chapters' }, (A.chapters || []).map(function (c, i) {
+      var parts = [h('h3', { class: 'about__h' }, h('span', { class: 'about__no', 'aria-hidden': 'true', text: (i < 9 ? '0' : '') + (i + 1) }), c.title)];
+      (c.text || []).filter(has).forEach(function (t) { parts.push(h('p', { text: t })); });
+      if (has(c.list)) {
+        parts.push(h('ul', { class: 'drives' }, c.list.map(function (it, k) {
+          return h('li', null,
+            h('span', { class: 'drives__dab', 'aria-hidden': 'true', html: RJY.brush(54, 20, { pigment: it.pigment, seed: k * 4.3 + 2, dir: 'h', dry: 0.24, inset: { across: 1.5, start: 2, end: 1 } }) }),
+            h('span', { class: 'drives__t', text: it.title }),
+            has(it.text) ? h('span', { class: 'drives__d', text: it.text }) : null);
+        })));
+      }
+      (c.after || []).filter(has).forEach(function (t) { parts.push(h('p', { text: t })); });
+      if (has(c.closing)) parts.push(h('p', { class: 'about__closing' }, h('span', { class: 'about__closing-star', 'aria-hidden': 'true', html: RJY.starIcon ? RJY.starIcon() : '' }), c.closing));
+      return h('div', { class: 'about__ch reveal' }, parts);
+    }));
+
     var photo = has(A.photo && A.photo.src)
-      ? h('figure', { class: 'about__photo reveal' }, h('img', { src: A.photo.src, alt: A.photo.alt || 'Portrait of Ray', loading: 'lazy' }))
+      ? h('figure', { class: 'about__photo' }, h('img', { src: A.photo.src, alt: A.photo.alt || 'Portrait of Ray', loading: 'lazy' }))
       : RJY.ph('a portrait or travel photo — about.photo in data/site.js');
-    root.appendChild(h('div', { class: 'about__main' },
-      h('p', { class: 'about__lead reveal', text: A.lead }),
-      h('div', { class: 'about__blocks' }, blocks)
-    ));
-    root.appendChild(h('div', { class: 'about__side', role: 'group', 'aria-label': 'At a glance' }, photo, coords));
+    var glance = h('div', { class: 'glance reveal', role: 'group', 'aria-labelledby': 'glance-title' },
+      photo,
+      h('h3', { class: 'glance__title', id: 'glance-title', text: 'At a Glance' }),
+      h('dl', null, (A.glance || []).filter(function (g) { return has(g.value); }).map(function (g) {
+        return h('div', null, h('dt', { text: g.label }), h('dd', null, withScripts(g.value), (g.flags || []).map(flag)));
+      })));
+
+    root.appendChild(h('div', { class: 'about__body' }, chapters, glance));
   };
 
   RJY.renderEducation = function (root) {
@@ -63,76 +105,29 @@
   };
 
   /* ---------------- Palette ---------------- */
-  var PIGMENTS = {
-    gold: ['#f2c14e', '#ffe29a', '#c98f1e'], ember: ['#e8892b', '#ffc27a', '#a85512'],
-    cobalt: ['#2a4ea6', '#6d93d6', '#152f72'], cornflower: ['#4a73b8', '#9bb8e6', '#2b4f8f'],
-    periwinkle: ['#8e9ccb', '#c9d1ef', '#5e6aa1'], foam: ['#cfdcef', '#ffffff', '#93a6c9'],
-    moon: ['#f3e3a8', '#fff6d6', '#cdb46a'], umber: ['#8a6a4f', '#c9a37f', '#5a4231'], teal: ['#5fb3b8', '#a7e3e5', '#317f86']
-  };
-  function rand(seed) { var x = Math.sin(seed * 9301 + 49297) * 233280; return x - Math.floor(x); }
-  // A procedurally painted brushstroke, different for every colour.
-  function swatch(pigment, seed) {
-    var c = PIGMENTS[pigment] || PIGMENTS.gold, W = 300, top = [], bot = [], n = 24, i;
-    for (i = 0; i <= n; i++) {
-      var x = 6 + (W - 14) * i / n, t = i / n;
-      var taper = Math.min(1, t * 6) * Math.min(1, (1 - t) * 3.2);
-      var half = (15 + 5 * Math.sin(t * 3 + seed)) * (0.35 + 0.65 * taper);
-      var mid = 27 + 4 * Math.sin(t * 2.4 + seed * 1.7);
-      top.push([x, mid - half - rand(seed + i) * 2.2]);
-      bot.push([x, mid + half + rand(seed * 3 + i) * 2.2]);
-    }
-    var d = 'M' + top.map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L');
-    d += ' L' + bot.reverse().map(function (p) { return p[0].toFixed(1) + ' ' + p[1].toFixed(1); }).join(' L') + ' Z';
-    var bristles = '';
-    for (i = 0; i < 9; i++) {
-      var y = 15 + i * 3.1 + rand(seed + i * 7) * 2, x0 = 8 + rand(seed + i) * 40, x1 = W - 10 - rand(seed + i * 2) * 70;
-      var col = i % 3 === 0 ? c[1] : (i % 3 === 1 ? c[2] : c[0]);
-      bristles += '<path d="M' + x0.toFixed(1) + ' ' + y.toFixed(1) + ' C' + (x0 + 80).toFixed(1) + ' ' + (y - 2 + rand(seed + i) * 4).toFixed(1) + ' ' + (x1 - 80).toFixed(1) + ' ' + (y + 2 - rand(seed * 2 + i) * 4).toFixed(1) + ' ' + x1.toFixed(1) + ' ' + (y + rand(seed + i * 5) * 2 - 1).toFixed(1) + '" stroke="' + col + '" stroke-width="' + (0.7 + rand(seed + i * 11) * 1.4).toFixed(2) + '" fill="none" opacity="' + (0.35 + rand(seed + i * 13) * 0.4).toFixed(2) + '" stroke-linecap="round"/>';
-    }
-    return '<svg class="pig__swatch" viewBox="0 0 300 54" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '" fill="' + c[0] + '" opacity=".92"/>' + bristles + '</svg>';
-  }
-
-  // A tall painted stroke for a colour band (stretched to fill it; the bristles keep their width).
-  function vstroke(pigment, seed) {
-    var c = PIGMENTS[pigment] || PIGMENTS.gold, H = 600, n = 30, left = [], right = [], i;
-    for (i = 0; i <= n; i++) {
-      var y = 4 + (H - 8) * i / n, t = i / n;
-      var taper = Math.min(1, t * 9) * Math.min(1, (1 - t) * 7);
-      var half = (41 + 5 * Math.sin(t * 5 + seed)) * (0.6 + 0.4 * taper);
-      var mid = 50 + 3 * Math.sin(t * 3.1 + seed * 1.3);
-      left.push([mid - half - rand(seed + i) * 3, y]);
-      right.push([mid + half + rand(seed * 3 + i) * 3, y]);
-    }
-    var pt = function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); };
-    var d = 'M' + left.map(pt).join(' L') + ' L' + right.reverse().map(pt).join(' L') + ' Z';
-    var bristles = '';
-    for (i = 0; i < 15; i++) {
-      var x = 12 + i * 5.3 + rand(seed + i * 7) * 3, y0 = 8 + rand(seed + i) * 70, y1 = H - 8 - rand(seed + i * 2) * 110;
-      var col = i % 3 === 0 ? c[1] : (i % 3 === 1 ? c[2] : c[0]);
-      bristles += '<path d="M' + x.toFixed(1) + ' ' + y0.toFixed(1) + ' C' + (x - 3 + rand(seed + i * 3) * 6).toFixed(1) + ' ' + (y0 + 170).toFixed(1) + ' ' +
-        (x + 3 - rand(seed + i * 5) * 6).toFixed(1) + ' ' + (y1 - 170).toFixed(1) + ' ' + (x + rand(seed + i * 9) * 4 - 2).toFixed(1) + ' ' + y1.toFixed(1) +
-        '" stroke="' + col + '" stroke-width="' + (1 + rand(seed + i * 11) * 2.4).toFixed(2) + '" fill="none" opacity="' + (0.35 + rand(seed + i * 13) * 0.45).toFixed(2) + '" stroke-linecap="round" vector-effect="non-scaling-stroke"/>';
-    }
-    return '<svg class="pal__stroke" viewBox="0 0 100 600" preserveAspectRatio="none" aria-hidden="true"><path d="' + d + '" fill="' + c[0] + '"/>' + bristles + '</svg>';
-  }
-
-  /* My Palette: one colour band per skill. Pointing at a band (or focusing it, or tapping it on a
-     phone) widens it to show what the skill is, the tools behind it and where it shows; the other
-     colours dim. Everything stays in the page for screen readers; only the view changes. */
+  /* My Palette: one band of paint per skill. Pointing at a band (wide screens), focusing it from the
+     keyboard, or clicking / tapping it opens it: the band widens and the skill, its tools and where it
+     shows appear beside the paint; the other colours dim. Each stroke is painted at the size it is
+     shown (brush.js), so nothing is stretched or cut off. Everything stays in the page for screen
+     readers; only the view changes. */
+  var GROW = 4.6;   // an open band's share of the width against 1 for each of the others (as in the CSS)
   RJY.renderPalette = function (root) {
     var list = h('ul', { class: 'pal reveal', role: 'list' });
-    var items = SITE.palette.map(function (g, i) {
-      var c = PIGMENTS[g.pigment] || PIGMENTS.gold;
+    var items = SITE.palette.map(function (g) {
       var tools = has(g.tools) ? h('ul', { class: 'pal__tools', 'aria-label': 'Tools' }, g.tools.map(function (t) { return h('li', { text: t }); })) : null;
+      var paint = h('div', { class: 'pal__paint', 'aria-hidden': 'true' });
+      var inner = h('div', { class: 'pal__in' },
+        h('h3', { class: 'pal__name', id: 'skill-' + g.id + '-name', text: g.name }),
+        h('p', { class: 'pal__text', text: g.text }),
+        tools,
+        RJY.connections(g.seenIn, 'Where it shows'));
       var el = h('li', { class: 'pal__item', id: 'skill-' + g.id, tabindex: '0', 'aria-labelledby': 'skill-' + g.id + '-name' },
-        h('div', { class: 'pal__paint', 'aria-hidden': 'true', html: vstroke(g.pigment, i * 3.7 + 1) + swatch(g.pigment, i * 3.7 + 1) }),
+        paint,
         h('span', { class: 'pal__label', 'aria-hidden': 'true', text: g.name }),
-        h('div', { class: 'pal__more' },
-          h('h3', { class: 'pal__name', id: 'skill-' + g.id + '-name', text: g.name }),
-          h('p', { class: 'pal__text', text: g.text }),
-          tools,
-          RJY.connections(g.seenIn, 'Where it shows')));
+        h('div', { class: 'pal__more' }, inner));
+      var c = RJY.PIGMENTS[g.pigment] || RJY.PIGMENTS.gold;
       el.style.setProperty('--pig', c[0]); el.style.setProperty('--pig-light', c[1]); el.style.setProperty('--pig-deep', c[2]);
+      el._paint = paint; el._in = inner; el._g = g;
       // pointing (wide screens) and keyboard focus show a colour while they last
       el.addEventListener('pointerenter', function (e) { if (e.pointerType !== 'touch' && wide.matches) mark('is-hover', 'has-hover', el); });
       el.addEventListener('pointerleave', function () { if (el.classList.contains('is-hover')) mark('is-hover', 'has-hover', null); });
@@ -162,18 +157,40 @@
       hint.textContent = (!RJY.finePointer ? 'Tap' : wide.matches ? 'Point at' : 'Click') + ' a colour to see the skill behind it.';
     }
     hintText();
-    if (wide.addEventListener) wide.addEventListener('change', hintText);
     root.appendChild(hint);
     root.appendChild(list);
-    // the text inside an open colour is laid out at the colour's final width, so it doesn't reflow
-    // while the band widens (flex-grow 4.6 against 1 for each of the others, as in the CSS)
+
+    // Sizes: a closed band, an open band, and the height the tallest description needs (so no text is
+    // ever cut off). The details of an open colour are laid out at their final width, beside the paint.
+    var painted = '', pt = 0;
     function measure() {
-      var gap = parseFloat(getComputedStyle(list).columnGap) || 0, n = items.length;
-      var open = (list.clientWidth - gap * (n - 1)) * 4.6 / (4.6 + n - 1);
-      if (open > 0) list.style.setProperty('--pal-open', Math.floor(open) + 'px');
+      var desk = wide.matches, n = items.length, W = list.clientWidth;
+      if (!W) return;
+      if (desk) {
+        var gap = parseFloat(getComputedStyle(list).columnGap) || 0, free = W - gap * (n - 1);
+        var idle = Math.floor(free / n), open = Math.floor(free * GROW / (GROW + n - 1));
+        list.style.setProperty('--pal-idle', idle + 'px');
+        list.style.setProperty('--pal-open', open + 'px');
+        var need = 0;
+        items.forEach(function (el) { need = Math.max(need, el._in.offsetHeight); });
+        list.style.setProperty('--pal-need', Math.ceil(need + 56) + 'px');
+      }
+      clearTimeout(pt); pt = setTimeout(paintAll, painted ? 160 : 0);
+    }
+    function paintAll() {
+      var desk = wide.matches, W = list.clientWidth;
+      var size = desk ? [parseInt(list.style.getPropertyValue('--pal-idle'), 10) || 100, list.clientHeight] : [W, 64];
+      var key = (desk ? 'd' : 'm') + size.join('x');
+      if (!W || key === painted) return;
+      painted = key;
+      items.forEach(function (el, i) {
+        el._paint.innerHTML = RJY.brush(size[0], size[1], { pigment: el._g.pigment, seed: i * 3.7 + 1, dir: desk ? 'v' : 'h' });
+      });
     }
     measure();
     if ('ResizeObserver' in window) new ResizeObserver(measure).observe(list); else window.addEventListener('resize', measure);
+    if (wide.addEventListener) wide.addEventListener('change', function () { hintText(); measure(); });
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(measure);
   };
 
   RJY.flashSkill = function (id) {
@@ -190,12 +207,13 @@
     root.appendChild(h('div', { class: 'langs-wrap reveal' },
       h('h3', { text: 'Languages' }),
       h('ul', { class: 'langs' }, P.languages.map(function (l) {
-        var zh = l.native === '中文';
+        var zh = /[\u3400-\u9fff]/.test(l.native), es = l.native === 'Español';
         return h('li', null,
-          h('span', { class: 'native' + (zh ? ' zh' : ''), lang: zh ? 'zh' : (l.name === 'Spanish' ? 'es' : 'en'), text: l.native }),
-          l.native !== l.name ? h('span', { class: 'en', text: l.name }) : h('span'),
-          has(l.note) ? h('span', { class: 'note', text: l.note }) : null
-        );
+          h('span', { class: 'native' + (zh ? ' zh' : ''), lang: zh ? 'zh' : (es ? 'es' : 'en'), text: l.native }),
+          h('span', { class: 'langs__about' },
+            l.native !== l.name ? h('span', { class: 'en', text: l.name }) : null,
+            has(l.level) ? h('span', { class: 'level', text: l.level }) : null,
+            has(l.note) ? h('span', { class: 'note', text: l.note }) : null));
       }))
     ));
     root.appendChild(h('div', { class: 'creds reveal' },
@@ -303,7 +321,7 @@
     var words = h('div', { class: 'contact__words' },
       h('p', { class: 'sec__kicker', 'data-kicker': '' }, 'Contact'),
       h('h2', { class: 'contact__title', id: 'contact-title', text: 'Under the Same Sky' }),
-      h('p', { class: 'contact__text', text: 'If you work in energy, international markets or finance and think I could help, I’d like to hear from you.' }),
+      has(P.contactLine) ? h('p', { class: 'contact__text', text: P.contactLine }) : null,
       h('p', { class: 'contact__sub', text: 'Based in ' + P.basedIn + ', ' + P.relocation.charAt(0).toLowerCase() + P.relocation.slice(1, -1) + '. I work in English, Spanish and Mandarin.' }),
       rows.length ? h('dl', { class: 'cdetails' }, rows) : null,
       save,

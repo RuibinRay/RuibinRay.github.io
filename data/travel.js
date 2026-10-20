@@ -50,6 +50,7 @@ SITE.travel = {
       headline: 'Where I was born',
       years: [],
       places: [
+        { name: 'San José', region: 'San José', note: 'Where I was born' },
         { name: 'Heredia', region: 'Heredia', note: 'Lincoln School — IB Diploma, June 2023' }
       ],
       story: '',

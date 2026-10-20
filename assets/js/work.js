@@ -1,6 +1,6 @@
 /*
- * work.js — "My Constellations": projects drawn as constellations, an index for scanning,
- * and the case-study chapter that opens over the page (#projects/<id>).
+ * work.js — "My Constellations": projects drawn as constellations, the All projects list (titles
+ * written on brushstrokes), and the case-study chapter that opens over the page (#projects/<id>).
  */
 (function () {
   'use strict';
@@ -141,17 +141,49 @@
       cons.forEach(function (c) { io.observe(c); });
     }
 
-    // Index — every project in one scannable list
-    var consName = {}; SITE.constellations.forEach(function (c) { consName[c.id] = c.name; });
-    var list = h('ol', null, SITE.work.map(function (w) {
-      return h('li', null, h('button', { type: 'button', onclick: function () { RJY.route.go('#projects/' + w.id); } },
-        h('span', { class: 'ix-cons', text: consName[w.constellation] }),
-        h('span', { class: 'ix-title', text: w.title }),
-        h('span', { class: 'ix-when', text: w.when || '' })));
-    }));
-    root.appendChild(h('div', { class: 'index reveal' },
+    // All projects — every project in one list, grouped by constellation. Each title is written on a
+    // brushstroke in its constellation's colour, painted at the title's real size (brush.js).
+    var n = 0, rows = [];
+    var groups = SITE.constellations.map(function (c) {
+      var items = SITE.work.filter(function (w) { return w.constellation === c.id; });
+      if (!items.length) return null;
+      var pig = RJY.PIGMENTS[c.hue] ? c.hue : 'gold';
+      return h('li', { class: 'ix-group' },
+        h('h4', { class: 'ix-group__name' },
+          h('span', { class: 'ix-group__dab', 'aria-hidden': 'true', html: RJY.brush(44, 16, { pigment: pig, seed: n + 4.1, dir: 'h', dry: 0.3, inset: { across: 2, start: 1, end: 1 } }) }),
+          c.name,
+          h('span', { class: 'ix-group__count', text: items.length + (items.length === 1 ? ' project' : ' projects') })),
+        h('ol', { class: 'ix-list', start: String(n + 1) }, items.map(function (w) {
+          n++;
+          var paint = h('span', { class: 'ix-paint', 'aria-hidden': 'true' }), text = h('span', { class: 'ix-text', text: w.title });
+          rows.push({ paint: paint, text: text, pigment: pig, seed: n * 7.3 + 2, key: '' });
+          return h('li', null, h('button', { type: 'button', class: 'ix-row', onclick: function () { RJY.route.go('#projects/' + w.id); } },
+            h('span', { class: 'ix-num', 'aria-hidden': 'true', text: (n < 10 ? '0' : '') + n }),
+            h('span', { class: 'ix-title' }, paint, text),
+            h('span', { class: 'ix-when', text: w.when || '' }),
+            h('span', { class: 'ix-go', 'aria-hidden': 'true', text: '→' })));
+        })));
+    }).filter(Boolean);
+    var index = h('div', { class: 'index reveal' },
       h('div', { class: 'index__head' }, h('h3', { text: 'All projects' }), h('span', { class: 'muted', style: { fontSize: '.8125rem' }, text: SITE.work.length + ' case studies' })),
-      list));
+      h('ul', { class: 'ix-groups' }, groups));
+    root.appendChild(index);
+    function paintRows() {
+      rows.forEach(function (r) {
+        var w = r.text.offsetWidth, ht = r.text.offsetHeight;
+        if (!w || !ht) return;
+        var key = w + 'x' + ht;
+        if (key === r.key) return;
+        r.key = key;
+        r.paint.style.width = w + 'px'; r.paint.style.height = ht + 'px';
+        var padR = parseFloat(getComputedStyle(r.text).paddingRight) || 0;
+        r.paint.innerHTML = RJY.brush(w, ht, { pigment: r.pigment, seed: r.seed, dir: 'h', texture: 0.5, dry: 0.06, solid: w - padR + 6, inset: { across: 2, start: 2, end: 3 } });
+      });
+    }
+    paintRows();
+    var pr; function later() { clearTimeout(pr); pr = setTimeout(paintRows, 150); }
+    if ('ResizeObserver' in window) new ResizeObserver(later).observe(index); else window.addEventListener('resize', later);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintRows);
 
     RJY.route.on('projects', open);
   };

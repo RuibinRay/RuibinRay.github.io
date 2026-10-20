@@ -17,17 +17,16 @@ SITE.profile = {
   heroName: ['RUIBIN', 'JIN YAO'],          // the two lines of the name on the homepage
   tagline: 'Building my own constellation.',
   intro: 'Exploring the intersection of finance, business, analytics, and technology.',
-  basedIn: 'Boston, MA',
-  bornIn: 'Costa Rica',
-  roots: 'Costa Rica and China',
-  graduation: 'December 2026',
-  focus: 'Energy and international business development, finance, and analytics',
+  basedIn: 'Boston, MA',                    // used in the contact section
   relocation: 'Open to relocating anywhere.',
+  // the Languages list under My Palette (level = how well, note = a certificate or detail; '' hides it)
   languages: [
-    { name: 'English', native: 'English', note: '' },
-    { name: 'Spanish', native: 'Español', note: '' },
-    { name: 'Mandarin', native: '中文', note: 'HSK Level 7–9' }
-  ]
+    { name: 'Mandarin Chinese', native: '中文', level: 'Primary language', note: 'HSK Level 7–9' },
+    { name: 'Spanish', native: 'Español', level: 'Native · fluent', note: '' },
+    { name: 'English', native: 'English', level: 'Fluent', note: '' }
+  ],
+  // the line under "Under the Same Sky" in the contact section
+  contactLine: 'If you’re interested in energy, international business, or finance, I’d love to connect, exchange ideas, and build meaningful professional relationships.'
 };
 
 SITE.links = {
@@ -55,33 +54,71 @@ SITE.meta = {
   paintingCredit: ''                           // who painted the homepage artwork, e.g. 'Painting by …' — leave empty to hide
 };
 
+// About — "Beyond the Horizon". Paragraphs are lists of strings; add, remove or reorder freely.
 SITE.about = {
-  lead: 'Born in Costa Rica, with roots in China, finishing my degree in Boston. My work sits where finance, data and international markets meet.',
-  blocks: [
+  tagline: 'Three cultures. Three languages. One global perspective.',
+  intro: [
+    'Born in Costa Rica with Chinese roots, and now building my future in Boston. I’m Ray — Edwin Ruibin Jin Yao — a Finance and Business Analytics student passionate about connecting people, ideas, and opportunities across borders.',
+    'My journey has taken me from Costa Rica to the United States and China, shaping how I approach business, technology, and international collaboration.'
+  ],
+  // each chapter: a title, its paragraphs (text), and optionally a list of { title, text }, more
+  // paragraphs after the list (after) and a closing line set larger (closing)
+  chapters: [
     {
-      title: 'Where I’m from',
-      text: 'I’m Ray — Edwin Ruibin Jin Yao. I was born in Costa Rica, my roots are in both Costa Rica and China, and I’m based in Boston, where I’m finishing a BBA in Finance & Business Analytics at Hult International Business School.'
+      title: 'Where I’m From',
+      text: [
+        'I grew up between Costa Rican and Chinese cultures, learning early on how different perspectives can create new opportunities.',
+        'Today, I’m completing my Bachelor of Business Administration at Hult International Business School in Boston, double majoring in Finance and Business Analytics, with graduation expected in December 2026.',
+        'Living, studying, and working across different cultures has taught me to adapt quickly, communicate effectively, and see opportunities from a global perspective.'
+      ]
     },
     {
-      title: 'Three languages at work',
-      text: 'I speak English, Spanish and Mandarin, and I’ve used all three on the job: coordinating Chinese and Costa Rican partners at CCECC Costa Rica, translating official documents, and writing partnership proposals in all three languages during my 2026 internship in Shenyang.'
+      title: 'Three Languages, One Global Mindset',
+      text: [
+        'I speak English, Spanish, and Mandarin Chinese, and I’ve had the opportunity to use all three professionally.',
+        'In Costa Rica, I supported cross-cultural communication, interpretation, and document translation involving Chinese and Costa Rican partners.',
+        'In Shenyang, China, I worked in international business development at Hengjiu Antai, a company specializing in vanadium redox flow batteries and long-duration energy storage.',
+        'There, I researched international energy markets, identified potential partners, and supported business outreach across Latin America, Australia, the Middle East, and other regions.',
+        'These experiences taught me that international business is about more than language. It’s about understanding people, building trust, and connecting opportunities.'
+      ]
     },
     {
-      title: 'What I care about',
-      text: 'Connecting business strategy with data-driven decision-making, and finding opportunities across international markets. I’m interested in finance, business strategy, analytics, technology, entrepreneurship and international business.'
+      title: 'What Drives Me',
+      text: [
+        'I’m curious about how businesses grow, how markets evolve, and how technology changes the way we live and work.',
+        'My main interests include:'
+      ],
+      // pigment: the colour of the brushstroke beside each one (see data/palette.js for the names)
+      list: [
+        { title: 'Finance & Investment', text: 'Understanding financial markets, business performance, and investment decisions.', pigment: 'gold' },
+        { title: 'Business Analytics', text: 'Turning data into meaningful insights and better decisions.', pigment: 'cornflower' },
+        { title: 'Energy & Technology', text: 'Exploring energy storage, emerging technologies, and the global energy transition.', pigment: 'teal' },
+        { title: 'International Business', text: 'Connecting companies, people, and opportunities across borders.', pigment: 'ember' },
+        { title: 'Entrepreneurship & Strategy', text: 'Building ideas, solving problems, and finding new ways to create value.', pigment: 'periwinkle' }
+      ],
+      after: ['I enjoy combining analytical thinking with creativity and a global perspective.']
     },
     {
-      title: 'What I’m looking for',
-      text: 'Roles in energy and international business development, finance, and analytics. I’m open to relocating anywhere.'
-    },
-    {
-      title: 'Problems I enjoy solving',
-      text: ''   // your words — e.g. what kind of question you like to be handed
-    },
-    {
-      title: 'What I hope to build',
-      text: ''   // your words
+      title: 'Looking Beyond',
+      text: [
+        'I believe some of the best opportunities begin with a conversation.',
+        'I’m always interested in meeting people who share a passion for finance, technology, energy, entrepreneurship, and international business.',
+        'Whether it’s exchanging ideas, learning from different experiences, or exploring potential collaborations, I’m open to connecting with people around the world.'
+      ],
+      closing: 'The world is full of opportunities. I’m here to explore them, connect the dots, and keep learning along the way.'
     }
+  ],
+  // At a Glance. flags: country codes drawn as small flags after the text (CRI, CHN and USA are drawn)
+  glance: [
+    { label: 'Born in', value: 'Costa Rica', flags: ['CRI'] },
+    { label: 'Cultural roots', value: 'Costa Rica & China', flags: ['CRI', 'CHN'] },
+    { label: 'Currently based in', value: 'Boston, Massachusetts', flags: ['USA'] },
+    { label: 'Education', value: 'BBA, Finance & Business Analytics — Hult International Business School' },
+    { label: 'Graduation', value: 'December 2026' },
+    { label: 'Languages', value: 'English · Español · 中文' },
+    { label: 'International experience', value: 'Costa Rica · United States · China' },
+    { label: 'Professional interests', value: 'Finance · Analytics · Energy · Technology · International Business · Entrepreneurship' },
+    { label: 'Global outlook', value: 'Open to international connections, collaborations, and opportunities.' }
   ],
   photo: { src: '', alt: '' },                  // e.g. { src: 'assets/img/ray.jpg', alt: 'Ray in Boston' }
   offTheClock: ['Basketball', 'Video games', 'Music production', 'Songwriting', 'Cooking', 'Movies']
