@@ -36,6 +36,39 @@
   }
   if (!RJY.finePointer) doc.classList.add('is-touch');
 
+  /* ---------- 2a. pause / play the moving painting ----------
+     The painting moves on its own; this button (in the navigation) stops and restarts it, and the
+     choice is remembered in this browser. */
+  var MOTION_KEY = 'rjy-motion';
+  var ICON_PAUSE = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5 3.5v9M11 3.5v9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>';
+  var ICON_PLAY = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M5.5 3.4l7 4.6-7 4.6z" fill="currentColor"/></svg>';
+  var motion = {
+    paused: (function () { try { return localStorage.getItem(MOTION_KEY) === 'paused'; } catch (e) { return false; } })(),
+    btn: null,
+    build: function () {
+      var navEl = document.getElementById('nav');
+      this.btn = h('button', { class: 'nav__motion', type: 'button', onclick: function () { motion.set(!motion.paused); } });
+      navEl.insertBefore(this.btn, navEl.querySelector('.nav__toggle'));
+      this.render();
+    },
+    render: function () {
+      var p = this.paused;
+      doc.classList.toggle('is-paused', p);
+      if (!this.btn) return;
+      this.btn.setAttribute('aria-label', p ? 'Play the moving painting' : 'Pause the moving painting');
+      this.btn.title = p ? 'Play the painting' : 'Pause the painting';
+      this.btn.innerHTML = p ? ICON_PLAY : ICON_PAUSE;
+    },
+    set: function (p) {
+      this.paused = p;
+      try { localStorage.setItem(MOTION_KEY, p ? 'paused' : 'playing'); } catch (e) {}
+      if (painting && glReady) { if (p) painting.stop(); else painting.start(); }
+      this.render();
+    }
+  };
+  RJY.motion = motion;
+  motion.build();
+
   /* ---------- 2. the living painting ---------- */
   var stage = document.querySelector('.stage');
   var canvas = stage.querySelector('.stage__canvas');
@@ -43,6 +76,13 @@
   var stageVeil = h('div', { class: 'stage__veil' });
   stage.appendChild(stageVeil);
   var vw = function () { return window.innerWidth; }, vh = function () { return window.innerHeight; };
+  // the soft preview behind the canvas sits exactly where the painting will appear
+  function placePreview() {
+    var w = stage.clientWidth || vw(), hh = stage.clientHeight || vh(), m = RJY.Painting.coverMap(w, hh, RJY.Painting.focalFor(w, hh));
+    stage.style.backgroundSize = Math.round(m[2]) + 'px ' + Math.round(m[3]) + 'px';
+    stage.style.backgroundPosition = Math.round(m[0]) + 'px ' + Math.round(m[1]) + 'px';
+  }
+  placePreview();
 
   function paintingSources() {
     var need = Math.max(vw(), vh() * 1.34) * Math.min(window.devicePixelRatio || 1, 2);
@@ -102,10 +142,41 @@
     else stillHover(i, on);
   };
 
+  // ?why: a small line at the bottom of the screen saying how the painting is being shown and why
+  // (living or still, full or lighter, resolution, frame rate, graphics) — for checking a device.
+  var stillWhy = '';
+  function whyBadge() {
+    if (!/[?&]why\b/.test(location.search)) return;
+    var el = h('p', { class: 'why-badge', role: 'status' });
+    document.body.appendChild(el);
+    var last = 0, lastT = performance.now();
+    setInterval(function () {
+      var P = painting, n = P && P.frames || 0, t = performance.now(), fps = Math.round((n - last) * 1000 / (t - lastT));
+      last = n; lastT = t;
+      var parts = [];
+      if (glReady && P) parts.push('Living painting (' + (P.lite ? 'lighter' : 'full') + ', ' + Math.round(P.quality * 100) + '% resolution, ' + (P.running ? fps + ' fps' : 'paused') + ')');
+      else parts.push('Still image' + (stillWhy ? ': ' + stillWhy : ''));
+      if (RJY.reducedMotion) parts.push('reduce motion is on (calmer movement)');
+      if (P && P.renderer && parts[0].indexOf(P.renderer) === -1) parts.push(P.renderer);
+      el.textContent = parts.join(' · ');
+    }, 1000);
+  }
+
+  // The opening and the star doorways start once the painting is ready, or after a short wait on a
+  // slow connection (the blurred preview of the painting shows meanwhile).
+  var introStarted = false;
+  function startIntro(dur) {
+    if (introStarted) return;
+    introStarted = true;
+    intro.run(dur);
+    hotspots.build();
+  }
   function startPainting() {
     var reduced = RJY.reducedMotion;
-    if (/[?&]still\b/.test(location.search)) {   // ?still shows the still painting (handy for testing the fallback)
-      useStill(); intro.run(reduced ? 0 : 1.2); hotspots.build(); return;
+    whyBadge();
+    if (/[?&]still\b/.test(location.search)) {
+      stillWhy = '?still in the address';   // ?still shows the still painting (handy for testing the fallback)
+      useStill(); startIntro(reduced ? 0 : 1.2); return;
     }
     var firstVisit = !sessionStorageGet('rjy-intro');
     var deep = !!RJY.route.parse(location.hash) || (location.hash && location.hash !== '#home');
@@ -113,29 +184,35 @@
     painting = RJY.painting = new RJY.Painting(canvas, {
       sources: paintingSources(), introDuration: introDur, maxDpr: 1.5,
       allowSoftware: /[?&](gl|capture)\b/.test(location.search),          // ?gl forces WebGL even on software renderers (testing)
+      lite: /[?&]lite\b/.test(location.search),                           // ?lite starts with the lighter painting (testing)
       preserveDrawingBuffer: /[?&]capture\b/.test(location.search),
-      onTooSlow: function () { glReady = false; useStill(true); },
-      onContextLost: function () { glReady = false; useStill(true); }
+      onTooSlow: function () { glReady = false; stillWhy = 'this device could not draw it smoothly'; useStill(true); },
+      onContextLost: function () { glReady = false; stillWhy = 'the graphics context was lost'; useStill(true); },
+      onRestored: function () { glReady = true; showLiving(); update(); }
     });
+    // reduced motion: the painting still lives, but calmly (slower flow, nothing zooms or spins)
+    painting.setGentle(reduced);
     painting.setView(camera.compute());
-    var fallbackTimer = setTimeout(function () { if (!glReady) useStill(); }, 3500);
+    var slowStart = setTimeout(function () { startIntro(reduced ? 0 : 1.2); }, 2600);
+    var fallbackTimer = setTimeout(function () { if (!glReady) useStill(); }, 9000);
     painting.init().then(function () {
       glReady = true;
-      clearTimeout(fallbackTimer);
-      doc.classList.remove('is-still');
-      doc.classList.add('is-gl');
-      if (reduced) { painting.renderAt(9, 1); }
-      else { painting.start(); }
-      intro.run(introDur);
-      hotspots.build();
+      clearTimeout(fallbackTimer); clearTimeout(slowStart);
+      showLiving();
+      startIntro(introDur);
       update();
     }).catch(function (err) {
       console.warn('Living painting unavailable, showing the still painting instead:', err && err.message);
-      clearTimeout(fallbackTimer);
+      stillWhy = err && err.message;
+      clearTimeout(fallbackTimer); clearTimeout(slowStart);
       useStill();
-      intro.run(reduced ? 0 : 1.2);
-      hotspots.build();
+      startIntro(reduced ? 0 : 1.2);
     });
+  }
+  function showLiving() {
+    doc.classList.remove('is-still');
+    doc.classList.add('is-gl');
+    if (motion.paused) painting.renderAt(9, 1); else painting.start();
   }
   function sessionStorageGet(k) { try { return sessionStorage.getItem(k); } catch (e) { return null; } }
   function sessionStorageSet(k, v) { try { sessionStorage.setItem(k, v); } catch (e) {} }
@@ -298,7 +375,7 @@
           onCover: go,
           onEnd: function () { go(); arrive(); painting.endPortal(0.5, finish); }
         });
-      } else if (!RJY.reducedMotion && doc.classList.contains('is-still')) {
+      } else if (!RJY.reducedMotion && !motion.paused && doc.classList.contains('is-still')) {
         // still painting: zoom toward the star, let the night close in, then open on the section
         doc.classList.add('is-portal-still');
         RJY.starHover(d.star, true);
@@ -394,7 +471,9 @@
       });
     },
     get: function (name) {
-      if (name === 'hero' || CAMS[name] === 'hero') { var v = RJY.Painting.heroView(vw(), vh()); v.dim = 0; return v; }
+      var hero = name === 'hero' || CAMS[name] === 'hero';
+      // with reduced motion the painting keeps its full view and only dims behind the sections
+      if (hero || RJY.reducedMotion) { var v = RJY.Painting.heroView(vw(), vh()); v.dim = hero ? 0 : CAMS[name].dim; return v; }
       return CAMS[name];
     },
     // 0..1: how far the camera has travelled into the final (contact) view
@@ -458,7 +537,7 @@
   var rz;
   window.addEventListener('resize', function () {
     clearTimeout(rz);
-    rz = setTimeout(function () { if (painting && glReady) painting.resize(); camera.measure(); hotspots.place(); update(); }, 120);
+    rz = setTimeout(function () { placePreview(); if (painting && glReady) painting.resize(); camera.measure(); hotspots.place(); update(); }, 120);
   });
   window.addEventListener('load', function () { camera.measure(); hotspots.place(); update(); });
   if ('ResizeObserver' in window) {

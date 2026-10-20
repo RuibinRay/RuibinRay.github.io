@@ -33,7 +33,7 @@ SITE.profile = {
 SITE.links = {
   email: 'ruibinjinyao@gmail.com',
   phones: [                                    // shown beside the email; leave a number empty to hide it
-    { number: '', label: 'United States' },    // e.g. '+1 617 555 0123'
+    { number: '+1 617 256 4136', label: 'United States' },
     { number: '+506 7297 1174', label: 'Costa Rica' }
   ],
   // The five stars in the contact sky (on the painted stars on desktop, drawn under the text on phones)

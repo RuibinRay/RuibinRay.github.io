@@ -20,7 +20,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 | Projects: *My Constellations* | Your work as constellations, each star opening a full case study | `data/work.js` |
 | Skills: *My Palette* | Skills as paint colours, each linked to the work where it shows. Also languages, certifications and coursework. | `data/palette.js`, `data/site.js` |
 | *How it all connects* | Every place, milestone, project and skill as one star chart. The lines come from the `related` links in your data. | the `related` fields |
-| Contact: *Under the Same Sky* | Back to the full painting. Your email and phone numbers sit beside the text; Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
+| Contact: *Under the Same Sky* | Back to the full painting. Your email and phone numbers sit beside the text (each with a Copy button), with a "Save my contact card" button that downloads a contact card (.vcf) for a phone's address book. Instagram, X, Facebook, LinkedIn and GitHub are five painted stars joined by a gold line (on phones the constellation is drawn under the text). | `data/site.js` → `links` |
 
 Everything links to everything: a project opens the country where it happened, a country opens the jobs you did there, a skill opens the projects that used it. That's the constellation.
 
@@ -38,7 +38,6 @@ Three rules the site follows:
 
 ### Things still worth adding (open `?draft` to see them all)
 
-- [ ] **Your US phone number**: `data/site.js` → `links.phones`. The US number sent had only 9 digits after +1, so it's left off until it's complete.
 - [ ] **The cities and provinces/states you visited** in Canada, South Korea, China and the US: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
 - [ ] **Photos** from each country: see *Adding photos*.
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
@@ -161,6 +160,8 @@ Useful address options:
 | `?draft` | Shows placeholders for missing information, plus the atlas editor |
 | `?still` | Shows the still painting instead of the animated one |
 | `?gl` | Forces the animated painting even on software graphics (for testing) |
+| `?lite` | Starts with the lighter painting that slower devices switch to |
+| `?why` | Shows a line at the bottom of the screen saying how the painting is being drawn on this device (living or still, full or lighter, resolution, frames per second, graphics chip) and, if it is still, why |
 | `#projects/market-maps` | Opens a case study directly; also `#world/CHN`, `#experience/hjat`, `#skills/finance` |
 
 ---
@@ -170,6 +171,8 @@ Useful address options:
 The site is published from the `main` branch of the repository **`RuibinRay/RuibinRay.github.io`**. Any change pushed to `main` is live at https://ruibinray.github.io within a minute or two.
 
 **Quick edits on github.com:** open the file (e.g. `data/site.js`), click the pencil icon, edit, then click **Commit changes**.
+
+**After changing code (CSS or the files in `assets/js/`):** change the `?v=` number on the `<link>` and `<script>` lines at the bottom of `index.html` (e.g. `?v=20261020` → `?v=20261105`), so visitors' browsers fetch the new files instead of using copies they saved earlier. Edits to `data/` files show up within about ten minutes either way.
 
 **With git:**
 
@@ -204,7 +207,9 @@ Never commit passwords, API keys or anything private. Everything in this reposit
 - **Still things:** the figure, driftwood, rocks, headland and horizon are masked out and never move. Only a faint moonlight shimmer touches the wood.
 - **Stars and the moon** stay exactly where they are painted. Each pulses at its own pace and now and then shimmers. A doorway star senses the pointer: it swells about 12%, its strokes swirl, a golden halo opens and the sky around it bends toward it. Clicking it flies the camera through the star into its section in about a second. The opening differs by section: the strokes part for World, a star-scattered iris for Experience and Projects, a softer dissolve for About.
 - Moving the mouse shifts the sky a few pixels against the foreground for depth. Scrolling glides a "camera" through the painting behind each section.
-- **Fallbacks:** with *Reduce motion* turned on, the painting is shown as a single still frame. Without WebGL, or with software-only graphics, or if the device can't keep up even at reduced resolution, the still image is shown with soft CSS star glows. The resolution adapts automatically to keep the animation smooth.
+- **It moves on its own.** The round ❚❚ button in the navigation pauses and resumes it (remembered in that browser), as accessibility guidelines ask for anything that moves by itself.
+- **Reduce motion:** with *Reduce motion* turned on in the device's settings, the painting keeps moving, but calmly: the paint flows at under half the speed, the spirals hold still, no stars flare, nothing zooms or pans while scrolling, and star doorways fade instead of flying.
+- **Slower devices:** the resolution adapts first; if that isn't enough, the site switches to a lighter painting (the same flowing sky and sea and glowing stars, without the stars' swell and swirl); only if even that can't keep up does it show the still image with soft CSS star glows. Without WebGL (for example with the browser's graphics acceleration turned off) or with software-only graphics, the still image is shown. If the graphics context is lost (a driver reset, waking from sleep), the painting comes back by itself. Open the site with `?why` to see which of these applies on a device.
 
 To tune the motion, change `this.params` in `painting.js`: `[sky flow, sea flow, swell, star glow]`.
 
@@ -217,7 +222,7 @@ The artwork was upscaled 4× with Real-ESRGAN, so it stays sharp on large screen
 ## Accessibility and performance
 
 - Full keyboard navigation with visible focus outlines and a skip link. The homepage star doorways are links: Tab to one and press Enter to travel; Back returns you to where you were. Timeline stars work with arrow keys. The star chart is a single tab stop, moved with the arrow keys and opened with Enter. Every country can be reached through the map search.
-- Respects *Reduce motion*: the painting holds still and a star doorway becomes a short fade. Dialogs trap focus and close with Esc.
+- Respects *Reduce motion*: calmer movement (see above), no zooming with the scroll, and a star doorway becomes a short fade. The pause button stops all movement. Dialogs trap focus and close with Esc.
 - A first visit loads about 1.5 MB on desktop and about 1.1 MB on phones. The world map (~320 KB) loads only as you approach it, and a country's provinces/states (8–95 KB) only when that country is opened.
 - Fonts, map data and libraries are all self-hosted. The one outside request goes to GitHub's API for the list of uploaded photos, at most once every 10 minutes per visitor (GitHub already hosts the site). No trackers, no cookies.
 

@@ -159,6 +159,25 @@
     { key: 'linkedin', label: 'LinkedIn', star: 10, handle: function () { return SITE.profile.legalName; } }
   ];
 
+  // A vCard 3.0 file: name, email, phones, the website and the profiles shown on the page.
+  function downloadCard(L, P, phones, items) {
+    var esc = function (v) { return String(v).replace(/\\/g, '\\\\').replace(/\n/g, '\\n').replace(/([,;])/g, '\\$1'); };
+    var parts = String(P.name || '').split(' '), family = parts.slice(1).join(' ');
+    var given = String(P.legalName || P.name || '').replace(new RegExp('\\s*' + family.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$'), '') || parts[0];
+    var lines = ['BEGIN:VCARD', 'VERSION:3.0', 'N:' + esc(family) + ';' + esc(given) + ';;;', 'FN:' + esc(P.name)];
+    if (has(P.goesBy)) lines.push('NICKNAME:' + esc(P.goesBy));
+    if (has(L.email)) lines.push('EMAIL;TYPE=INTERNET:' + L.email);
+    phones.forEach(function (p) { lines.push('TEL;TYPE=CELL:' + p.number.replace(/[^\d+]/g, '')); });
+    var site = (SITE.meta && SITE.meta.siteUrl) || location.href.split('#')[0];
+    lines.push('URL:' + site);
+    items.forEach(function (it) { lines.push('X-SOCIALPROFILE;TYPE=' + it.key + ':' + it.href); });
+    lines.push('END:VCARD');
+    var blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/vcard;charset=utf-8' });
+    var a = h('a', { href: URL.createObjectURL(blob), download: String(P.name || 'contact').replace(/\s+/g, '-') + '.vcf' });
+    document.body.appendChild(a); a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  }
+
   RJY.renderContact = function (root) {
     var L = SITE.links, P = SITE.profile;
     var items = NETWORKS.filter(function (n) { return has(L[n.key]); }).map(function (n) {
@@ -172,18 +191,31 @@
     // email and phones, beside the words
     var phones = (L.phones || []).filter(function (p) { return has(p.number); });
     var rows = [];
-    if (has(L.email)) {
-      var copy = navigator.clipboard ? h('button', { class: 'cdetails__copy', type: 'button', text: 'Copy', onclick: function () {
+    function copyBtn(value, what) {
+      if (!navigator.clipboard) return null;
+      return h('button', { class: 'cdetails__copy', type: 'button', text: 'Copy', 'aria-label': 'Copy ' + what, onclick: function () {
         var b = this;
-        navigator.clipboard.writeText(L.email).then(function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy'; }, 1600); }, function () {});
-      } }) : null;
-      rows.push(h('div', null, h('dt', { text: 'Email' }), h('dd', null, h('a', { href: 'mailto:' + L.email, text: L.email }), copy)));
+        navigator.clipboard.writeText(value).then(function () {
+          b.textContent = 'Copied'; b.setAttribute('aria-label', what + ' copied');
+          setTimeout(function () { b.textContent = 'Copy'; b.setAttribute('aria-label', 'Copy ' + what); }, 1600);
+        }, function () {});
+      } });
+    }
+    if (has(L.email)) {
+      rows.push(h('div', null, h('dt', { text: 'Email' }), h('dd', null, h('a', { href: 'mailto:' + L.email, text: L.email }), copyBtn(L.email, 'email address'))));
     }
     if (phones.length) {
-      rows.push(h('div', null, h('dt', { text: 'Phone' }), phones.map(function (p) {
-        return h('dd', null, h('a', { href: 'tel:' + p.number.replace(/[^\d+]/g, ''), text: p.number }), has(p.label) ? h('span', { class: 'cdetails__where', text: p.label }) : null);
+      rows.push(h('div', null, h('dt', { text: phones.length > 1 ? 'Phones' : 'Phone' }), phones.map(function (p) {
+        return h('dd', null, h('a', { href: 'tel:' + p.number.replace(/[^\d+]/g, ''), text: p.number }),
+          has(p.label) ? h('span', { class: 'cdetails__where', text: p.label }) : null,
+          copyBtn(p.number, (has(p.label) ? p.label + ' ' : '') + 'phone number'));
       })));
     }
+    // a contact card (.vcf) with the same details, for a phone's or computer's address book
+    var save = (has(L.email) || phones.length) ? h('p', { class: 'cdetails__save' },
+      h('button', { class: 'btn btn--ghost', type: 'button', onclick: function () { downloadCard(L, P, phones, items); } },
+        h('span', { html: '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2v8M4.5 6.8L8 10.3l3.5-3.5M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' }),
+        'Save my contact card')) : null;
     var missingPhones = (L.phones || []).filter(function (p) { return !has(p.number); });
 
     // the constellation drawn in the page (phones, tablets, or when the painted stars are covered)
@@ -202,6 +234,7 @@
       h('p', { class: 'contact__text', text: 'If you work in energy, international markets or finance and think I could help, I’d like to hear from you.' }),
       h('p', { class: 'contact__sub', text: 'Based in ' + P.basedIn + ', ' + P.relocation.charAt(0).toLowerCase() + P.relocation.slice(1, -1) + '. I work in English, Spanish and Mandarin.' }),
       rows.length ? h('dl', { class: 'cdetails' }, rows) : null,
+      save,
       missingPhones.length ? RJY.ph('your ' + missingPhones.map(function (p) { return p.label; }).join(' and ') + ' phone number — links.phones in data/site.js') : null,
       !has(L.email) ? RJY.ph('your public email — links.email in data/site.js') : null,
       inlineWrap);
@@ -245,7 +278,7 @@
     var section = root.closest('section');
 
     function detailRects() {
-      return Array.prototype.map.call(words.querySelectorAll('.sec__kicker, .contact__title, .contact__text, .contact__sub, .cdetails, .ph'), function (e) { return e.getBoundingClientRect(); })
+      return Array.prototype.map.call(words.querySelectorAll('.sec__kicker, .contact__title, .contact__text, .contact__sub, .cdetails, .cdetails__save, .ph'), function (e) { return e.getBoundingClientRect(); })
         .filter(function (r) { return r.width > 0; });
     }
     function hits(a, b) { return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }

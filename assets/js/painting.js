@@ -126,7 +126,26 @@
   function warpReach(i) { return effectRadius(i) * 2.3; }
   function glowReach(i) { var s = LIGHTS[i]; return i === MOON ? s.halo * 2.6 + s.core * 0.12 : s.halo * 3.14; }
 
-  var FRAG = [
+  // A lighter painting for slower graphics: the same flowing sky, sea and glowing stars, without the
+  // stars' lens, ripple and swirl, the light running along the currents, or the portal's streaks.
+  function glowLite(i) {
+    var s = LIGHTS[i], cy = s.y / META.aspect, moon = i === MOON;
+    return [
+      '  {',
+      '    vec4 fx=uSF[' + i + ']; vec4 gx=uSG[' + i + '];',
+      '    vec2 dv=q-vec2(' + f(s.x) + ',' + f(cy) + ')+sp; float d2=dot(dv,dv);',
+      '    if(d2<' + f(s.halo * s.halo * (moon ? 6.76 : 9.0)) + '){',
+      '      float b=1.0+0.95*fx.x+gx.z;',
+      moon
+        ? '      glow+=vec3(1.0,0.86,0.50)*exp(-d2/' + f(s.halo * s.halo * 0.9) + ')*(0.05+0.04*gx.x)*b; sm=max(sm,ss(' + f(s.core * s.core * 1.1025) + ',' + f(s.core * s.core * 0.49) + ',d2));'
+        : '      float k=exp(-d2/' + f(s.core * s.core * 0.9) + '); glow+=vec3(1.0,0.80,0.36)*exp(-d2/' + f(s.halo * s.halo * 0.55) + ')*(0.05+0.11*gx.x)*b+vec3(1.0,0.95,0.80)*k*(0.04+0.10*gx.y)*b; sm=max(sm,k);',
+      '    }',
+      '  }'
+    ].join('\n');
+  }
+
+  function fragSource(lite) {
+    return [
     'precision highp float;',
     'uniform sampler2D uImage;uniform sampler2D uSky;uniform sampler2D uSea;uniform sampler2D uMask;uniform sampler2D uNoise;uniform sampler2D uBlur;',
     'uniform vec2 uRes;uniform vec4 uMap;uniform float uAspect;uniform float uHorizon;',
@@ -182,8 +201,8 @@
     '    float a1=uSpiral1.z*exp(-r1/(uSpiral1.w*uSpiral1.w)); float a2=uSpiral2.z*exp(-r2/(uSpiral2.w*uSpiral2.w));',
     '    uvS+=(vec2(-d1.y,d1.x)*a1+vec2(-d2.y,d2.x)*a2)*vec2(1.0,uAspect)*skyW;',
     // sky 2: stars react — magnify, ripple the sky around them, lean toward the cursor
-    '    vec2 zc=vec2(0.0); float zr=1.0; float zamp=0.0; float zph=0.0; float zw=0.0;',
-    grouped('uvS', warpReach, warpBlock),
+    lite ? '' : '    vec2 zc=vec2(0.0); float zr=1.0; float zamp=0.0; float zph=0.0; float zw=0.0;',
+    lite ? '' : grouped('uvS', warpReach, warpBlock),
     // sky 3: two-phase flow map — paint slides along its own brushstrokes; currents surge and calm
     '    vec2 f=(texture2D(uSky,uvS).rg*2.0-1.0)*vec2(1.0,uAspect)*uParams.x;',
     '    f*=0.62+0.76*texture2D(uNoise,uvS*vec2(1.1,0.8)+vec2(uClock*0.009,-uClock*0.006)).r;',
@@ -196,6 +215,7 @@
     '    vec3 cb=mix(o,img(b),smoothstep(0.05,0.6,texture2D(uSky,b).b));',
     '    col=blend2(ca,cb,w0,uvS,length(f)*0.5);',
     // sky 4: inside a halo, the star's own golden strokes swirl around its centre (two-phase, never tears)
+    lite ? '' : [
     '    if(zw>0.001){',
     '      vec2 L=(uvS-zc)*vec2(1.0,1.0/uAspect); float lr=length(L);',
     '      float ang=zamp*ss(zr*1.2,zr*0.2,lr);',
@@ -210,7 +230,8 @@
     '    vec2 ls=uvS*vec2(2.6,2.0);',
     '    float n0=texture2D(uNoise,ls-f*2.2*(q0-0.5)).g; float n1=texture2D(uNoise,ls-f*2.2*(q1-0.5)).g;',
     '    float lum=dot(col,vec3(0.3,0.5,0.2));',
-    '    col*=1.0+(mix(n1,n0,wq)-0.5)*0.22*smoothstep(0.25,0.75,lum)*skyW*uFx.w;',
+    '    col*=1.0+(mix(n1,n0,wq)-0.5)*0.22*smoothstep(0.25,0.75,lum)*skyW*uFx.w;'
+    ].join('\n'),
     '  } else if(seaW>0.003){',
     // ocean: swells travelling toward the viewer + strokes drifting along the foam
     '    float depth=clamp((uv.y-uHorizon)/(1.0-uHorizon),0.0,1.0);',
@@ -244,7 +265,7 @@
     '  vec2 q=vec2(uv.x,uv.y/uAspect);',
     '  vec2 sp=vec2(par.x,par.y/uAspect);',
       '  vec3 glow=vec3(0.0); float sm=0.0;',
-    grouped('uv', glowReach, glowBlock),
+    grouped('uv', glowReach, lite ? glowLite : glowBlock),
     '  float ist=smoothstep(0.25,0.75,uIntro);',
     '  col*=1.0-(1.0-ist)*0.55*sm;',
     '  glow*=ist*uParams.w;',
@@ -252,11 +273,13 @@
     // ---- portal: currents stream past, light floods out, then the destination's night opens ----
     '  if(PM>0.0005){',
     '    float st=PM*smoothstep(0.14,0.5,PP)*(1.0-0.5*smoothstep(0.82,1.0,PP));',
+    lite ? '' : [
     '    if(st>0.002){',
     '      vec3 acc=col; float jt=hash(p)*0.9;',
     '      for(int k=1;k<7;k++){acc+=img(pc+(uv-pc)*(1.0-st*0.2*(float(k)+jt)/6.6));}',
     '      col=mix(col,acc/7.0,min(1.0,st*1.3));',
-    '    }',
+    '    }'
+    ].join('\n'),
     '    float R=mix(0.02,1.2,smoothstep(0.04,0.8,PP));',
     '    col+=vec3(1.0,0.83,0.46)*exp(-sr*sr/(R*R*0.3))*PM*smoothstep(0.0,0.28,PP)*(1.0-smoothstep(0.5,0.9,PP))*0.9;',
     '    col=mix(col,col*vec3(0.85,0.92,1.15),PM*smoothstep(0.3,0.8,PP)*0.5);',
@@ -284,7 +307,8 @@
     '  col+=(g-0.5)*0.035*uFx.x;',
     '  gl_FragColor=vec4(col,1.0);',
     '}'
-  ].join('\n');
+    ].filter(function (line) { return line !== ''; }).join('\n');
+  }
 
   function compile(gl, type, src) {
     var sh = gl.createShader(type);
@@ -340,6 +364,7 @@
     this.flowT = 0;
     this.clock = 0;
     this.intro = this.opts.introDuration > 0 ? 0 : 1;
+    this.gentle = false;          // reduced motion: a slower, calmer painting (see setGentle)
     this.introStart = null;
     this.quality = 1;
     this.frameTimes = [];
@@ -373,40 +398,39 @@
     this._frame = this._frame.bind(this);
   }
 
+  var UNIFORMS = ['uImage', 'uSky', 'uSea', 'uMask', 'uNoise', 'uBlur', 'uRes', 'uMap', 'uAspect', 'uHorizon', 'uFlowT', 'uClock', 'uIntro', 'uScroll', 'uMouse',
+    'uParams', 'uFx', 'uSpiral1', 'uSpiral2', 'uSF', 'uSG', 'uSD', 'uPortal', 'uPortal2'];
+
   Painting.prototype.init = function () {
+    try { return this._init(); } catch (e) { return Promise.reject(e); }
+  };
+  Painting.prototype._init = function () {
     var self = this, gl;
     var attrs = { alpha: false, antialias: false, depth: false, stencil: false, premultipliedAlpha: false, preserveDrawingBuffer: !!this.opts.preserveDrawingBuffer, powerPreference: 'high-performance' };
     try { gl = this.canvas.getContext('webgl', attrs) || this.canvas.getContext('experimental-webgl', attrs); } catch (e) { gl = null; }
-    if (!gl) return Promise.reject(new Error('WebGL unavailable'));
-    if (!this.opts.allowSoftware) {
-      var dbg = gl.getExtension('WEBGL_debug_renderer_info');
-      var renderer = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
-      if (/swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) return Promise.reject(new Error('Software WebGL (' + renderer + ')'));
+    if (!gl) return Promise.reject(new Error('WebGL unavailable (graphics acceleration may be off in this browser)'));
+    var dbg = gl.getExtension('WEBGL_debug_renderer_info');
+    var renderer = this.renderer = String(dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    if (!this.opts.allowSoftware && /swiftshader|llvmpipe|softpipe|software|basic render/i.test(renderer)) {
+      return Promise.reject(new Error('Software WebGL (' + renderer + ')'));
     }
     this.gl = gl;
-
-    var prog = gl.createProgram();
-    gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, VERT));
-    var fragSrc = FRAG;
     var hp = gl.getShaderPrecisionFormat(gl.FRAGMENT_SHADER, gl.HIGH_FLOAT);
-    if (!hp || hp.precision === 0) fragSrc = fragSrc.replace('precision highp float;', 'precision mediump float;');
-    gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, fragSrc));
-    gl.linkProgram(prog);
-    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return Promise.reject(new Error('Program link failed: ' + gl.getProgramInfoLog(prog)));
-    gl.useProgram(prog);
-    this.prog = prog;
+    this._highp = !!(hp && hp.precision > 0);
+    this._progs = {};
 
     var buf = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buf);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
-    var loc = gl.getAttribLocation(prog, 'aPos');
-    gl.enableVertexAttribArray(loc);
-    gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+    gl.enableVertexAttribArray(0);
+    gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
 
-    var names = ['uImage', 'uSky', 'uSea', 'uMask', 'uNoise', 'uBlur', 'uRes', 'uMap', 'uAspect', 'uHorizon', 'uFlowT', 'uClock', 'uIntro', 'uScroll', 'uMouse',
-      'uParams', 'uFx', 'uSpiral1', 'uSpiral2', 'uSF', 'uSG', 'uSD', 'uPortal', 'uPortal2'];
-    this.u = {};
-    names.forEach(function (n) { self.u[n] = gl.getUniformLocation(prog, n); });
+    // the full painting, or straight to the lighter one if this device can't build it
+    try { this._use(!!this.opts.lite); } catch (e) {
+      if (this.opts.lite) throw e;
+      console.info('Using the lighter painting: ' + (e && e.message));
+      this._use(true);
+    }
 
     var src = this.opts.sources;
     return Promise.all([
@@ -414,18 +438,8 @@
     ]).then(function (imgs) {
       if (gl.isContextLost()) throw new Error('WebGL context lost');
       self.imageSize = [imgs[0].naturalWidth, imgs[0].naturalHeight];
-      self.tex = [
-        self._texture(imgs[0], 0, false, false),
-        self._texture(imgs[1], 1, true, false),
-        self._texture(imgs[2], 2, true, false),
-        self._texture(imgs[3], 3, true, false),
-        self._texture(imgs[4], 4, true, true),
-        self._texture(imgs[5], 5, false, false)
-      ];
-      gl.uniform1i(self.u.uImage, 0); gl.uniform1i(self.u.uSky, 1); gl.uniform1i(self.u.uSea, 2);
-      gl.uniform1i(self.u.uMask, 3); gl.uniform1i(self.u.uNoise, 4); gl.uniform1i(self.u.uBlur, 5);
-      gl.uniform1f(self.u.uAspect, META.aspect);
-      gl.uniform1f(self.u.uHorizon, META.horizon);
+      self._imgs = imgs;           // kept to rebuild the textures if the graphics context is lost and restored
+      self._textures();
       self.resize();
       self._updateLights(0);
       self._draw();
@@ -436,13 +450,72 @@
     });
   };
 
+  // Build (once) and switch to the full or the lite program.
+  Painting.prototype._program = function (lite) {
+    var key = lite ? 'lite' : 'full';
+    if (this._progs[key]) return this._progs[key];
+    var gl = this.gl, prog = gl.createProgram(), src = fragSource(!!lite);
+    if (!this._highp) src = src.replace('precision highp float;', 'precision mediump float;');
+    gl.attachShader(prog, compile(gl, gl.VERTEX_SHADER, VERT));
+    gl.attachShader(prog, compile(gl, gl.FRAGMENT_SHADER, src));
+    gl.bindAttribLocation(prog, 0, 'aPos');
+    gl.linkProgram(prog);
+    if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error('Program link failed: ' + gl.getProgramInfoLog(prog));
+    var u = {};
+    UNIFORMS.forEach(function (n) { u[n] = gl.getUniformLocation(prog, n); });
+    gl.useProgram(prog);
+    gl.uniform1i(u.uImage, 0); gl.uniform1i(u.uSky, 1); gl.uniform1i(u.uSea, 2);
+    gl.uniform1i(u.uMask, 3); gl.uniform1i(u.uNoise, 4); gl.uniform1i(u.uBlur, 5);
+    gl.uniform1f(u.uAspect, META.aspect);
+    gl.uniform1f(u.uHorizon, META.horizon);
+    return (this._progs[key] = { prog: prog, u: u });
+  };
+  Painting.prototype._use = function (lite) {
+    var P = this._program(lite);
+    this.gl.useProgram(P.prog);
+    this.prog = P.prog; this.u = P.u; this.lite = !!lite;
+    if (this.cssSize) this._applyMap();
+  };
+
+  // A graphics context can be lost (a driver reset, waking from sleep). Ask for it back and rebuild.
   function canvas_onLost(self) {
     self.canvas.addEventListener('webglcontextlost', function (e) {
       e.preventDefault();
       self.stop();
+      self.ready = false;
       if (self.opts.onContextLost) self.opts.onContextLost();
     }, false);
+    self.canvas.addEventListener('webglcontextrestored', function () {
+      try {
+        var gl = self.gl, lite = self.lite;
+        self._progs = {};
+        var buf = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 3, -1, -1, 3]), gl.STATIC_DRAW);
+        gl.enableVertexAttribArray(0);
+        gl.vertexAttribPointer(0, 2, gl.FLOAT, false, 0, 0);
+        self._use(lite);
+        self._textures();
+        self.resize();
+        self._updateLights(0);
+        self._draw();
+        self.ready = true;
+        if (self.opts.onRestored) self.opts.onRestored();
+      } catch (err) { console.info('The painting could not be restored: ' + (err && err.message)); }
+    }, false);
   }
+
+  Painting.prototype._textures = function () {
+    var imgs = this._imgs;
+    this.tex = [
+      this._texture(imgs[0], 0, false, false),
+      this._texture(imgs[1], 1, true, false),
+      this._texture(imgs[2], 2, true, false),
+      this._texture(imgs[3], 3, true, false),
+      this._texture(imgs[4], 4, true, true),
+      this._texture(imgs[5], 5, false, false)
+    ];
+  };
 
   Painting.prototype._texture = function (img, unit, data, repeat) {
     var gl = this.gl;
@@ -548,6 +621,10 @@
   Painting.prototype.setMouse = function (x, y) { this.mouseTarget = [x, y]; };
   Painting.prototype.setScroll = function (v) { this.scroll = v; this._redraw(); };
   Painting.prototype.skipIntro = function () { this.intro = 1; this.introStart = -1e9; };
+  // Calmer motion for visitors who ask their device to reduce motion: the paint keeps flowing, at
+  // under half the speed, the spirals hold still, no stars flare, and a star brightens instead of
+  // swelling and swirling when pointed at.
+  Painting.prototype.setGentle = function (on) { this.gentle = !!on; };
 
   /* ---------- interaction with the stars ---------- */
 
@@ -634,18 +711,19 @@
       }
       L.a += (at - L.a) * Math.min(1, dt * 5);
       var pb = P && P.index === i ? smooth(0, 0.35, P.p) * P.mix : 0;
-      L.phase += dt * L.speed * (1 + 2.6 * L.h + 7 * pb);
+      L.phase += dt * L.speed * (this.gentle ? 0.5 : 1 + 2.6 * L.h + 7 * pb);
       if (L.flareStart >= 0) {
         var ft = (t - L.flareStart) / 1.8;
         if (ft >= 1) { L.flare = 0; L.flareStart = -1; } else L.flare = ft > 0 ? Math.pow(Math.sin(Math.PI * ft), 2) : 0;
       }
       var ph = L.phase - Math.floor(L.phase);
-      sf[i * 4] = Math.min(1, L.h + pb);
-      var dir = L.dir || [0, 0];
-      sf[i * 4 + 1] = L.a * dir[0];     // the pull toward the pointer (x); its y goes in uSD
-      sd[i] = L.a * dir[1];
+      var hv = this.gentle ? 0 : L.h;   // gentle: the hover shows as light (below), not as movement
+      sf[i * 4] = Math.min(1, hv + pb);
+      var dir = L.dir || [0, 0], pull = this.gentle ? 0 : L.a;
+      sf[i * 4 + 1] = pull * dir[0];     // the pull toward the pointer (x); its y goes in uSD
+      sd[i] = pull * dir[1];
       sf[i * 4 + 2] = ph;
-      sf[i * 4 + 3] = L.ampIdle + 0.32 * L.h + 0.6 * pb;
+      sf[i * 4 + 3] = L.ampIdle + 0.32 * hv + 0.6 * pb;
       if (i === MOON) {
         sg[i * 4] = 0.5 + 0.5 * Math.sin(t * 0.33);
         sg[i * 4 + 1] = 0;
@@ -653,8 +731,8 @@
         sg[i * 4] = 0.5 + 0.5 * Math.sin(t * (0.55 + ((i * 0.618) % 1) * 0.8) + i * 2.3);
         sg[i * 4 + 1] = 0.5 + 0.5 * Math.sin(t * (1.3 + ((i * 0.381) % 1) * 1.1) + i * 1.1);
       }
-      sg[i * 4 + 2] = 0.35 * L.flare + 1.4 * pb;
-      sg[i * 4 + 3] = 0.010 * Math.sin(t * L.breathF + L.breathP) * (0.3 + L.h) + 0.03 * L.flare;
+      sg[i * 4 + 2] = 0.35 * L.flare + 1.4 * pb + (this.gentle || this.lite ? 0.9 * L.h : 0);
+      sg[i * 4 + 3] = this.gentle ? 0 : 0.010 * Math.sin(t * L.breathF + L.breathP) * (0.3 + L.h) + 0.03 * L.flare;
     }
   };
 
@@ -678,7 +756,7 @@
       gl.uniform4f(u.uPortal2, 0, 0, 0, 1);
     }
     // the two spirals wind and unwind slowly, in opposite senses and out of step
-    var amp = this.intro * 0.05;
+    var amp = this.gentle ? 0 : this.intro * 0.05;
     gl.uniform4f(u.uSpiral1, 545 / 1024, 212 / 765, amp * Math.sin(this.flowT * 0.21), 0.13);
     gl.uniform4f(u.uSpiral2, 735 / 1024, 292 / 765, -amp * 0.8 * Math.sin(this.flowT * 0.27 + 1.3), 0.085);
     gl.drawArrays(gl.TRIANGLES, 0, 3);
@@ -708,6 +786,7 @@
 
   Painting.prototype._frame = function (now) {
     if (!this.running) return;
+    this.frames = (this.frames || 0) + 1;
     var dt = Math.min(0.1, (now - this._last) / 1000);
     this._last = now;
     var dur = this.opts.introDuration || 0;
@@ -715,12 +794,12 @@
     if (dur > 0 && this.intro < 1) this.intro = Math.min(1, (now - this.introStart) / 1000 / dur);
     // the sky and sea start moving during the second half of the intro
     var flowSpeed = smooth(0.45, 1.0, this.intro);
-    this.clock += dt;
-    this.flowT += dt * flowSpeed;
+    this.clock += dt * (this.gentle ? 0.6 : 1);
+    this.flowT += dt * flowSpeed * (this.gentle ? 0.45 : 1);
     this.mouse[0] += (this.mouseTarget[0] - this.mouse[0]) * Math.min(1, dt * 2.2);
     this.mouse[1] += (this.mouseTarget[1] - this.mouse[1]) * Math.min(1, dt * 2.2);
     // now and then one star shimmers a little brighter than the rest
-    if (this.clock > this.nextFlare && this.intro >= 1) {
+    if (this.clock > this.nextFlare && this.intro >= 1 && !this.gentle) {
       this.flare(Math.floor(Math.random() * 12));
       this.nextFlare = this.clock + 5 + Math.random() * 7;
     }
@@ -739,16 +818,27 @@
   };
 
   // Lower the internal resolution on slow devices so the animation stays smooth.
+  // Steps, as needed: lower resolution → the lighter painting → (only if even that can't keep up) the
+  // still image. Short measuring windows at first, so a slow device finds its level within seconds.
   Painting.prototype._adapt = function (dt) {
     var ft = this.frameTimes;
     ft.push(dt);
-    if (ft.length < 90) return;
+    this._windows = this._windows || 0;
+    if (ft.length < (this._windows < 3 ? 24 : 80)) return;
+    this._windows++;
     var avg = ft.reduce(function (a, b) { return a + b; }, 0) / ft.length;
     ft.length = 0;
-    if (avg > 1 / 40 && this.quality > 0.5) { this.quality = Math.max(0.5, this.quality - 0.15); this.resize(); }
-    else if (avg < 1 / 57 && this.quality < 1) { this.quality = Math.min(1, this.quality + 0.1); this.resize(); }
-    // still under ~18 fps at the lowest quality, twice in a row: hand over to the still painting
-    this._slow = (avg > 1 / 18 && this.quality <= 0.5) ? (this._slow || 0) + 1 : 0;
+    if (avg > 1 / 40 && this.quality > 0.5) {
+      this.quality = Math.max(0.5, this.quality - (avg > 1 / 25 ? 0.25 : 0.12));
+      this.resize();
+      return;
+    }
+    if (avg < 1 / 57 && this.quality < 1) { this.quality = Math.min(1, this.quality + 0.1); this.resize(); return; }
+    if (avg > 1 / 28 && this.quality <= 0.5 && !this.lite) {
+      try { this._use(true); this.quality = 0.75; this.resize(); this._slow = 0; return; } catch (e) { /* fall through */ }
+    }
+    // still under ~16 fps at the lowest quality of the lighter painting, twice in a row: hand over to the still image
+    this._slow = (avg > 1 / 16 && this.quality <= 0.5 && this.lite) ? (this._slow || 0) + 1 : 0;
     if (this._slow >= 2 && this.opts.onTooSlow) { this.stop(); this.opts.onTooSlow(); }
   };
 
