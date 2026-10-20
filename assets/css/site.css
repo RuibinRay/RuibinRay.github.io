@@ -518,7 +518,9 @@ p.about__closing {
 .country.s-visited:hover, .country.s-home:hover { fill: #ffd56e; }
 .country.s-current { fill: var(--teal); stroke: rgba(220, 255, 255, .85); filter: url(#glowTeal); animation: currentPulse 3.2s ease-in-out infinite; }
 @keyframes currentPulse { 50% { fill: #86d2d6; } }
-.country.is-selected { stroke: #fff; stroke-width: 1.6; }
+.country.is-selected, .country.is-linked { stroke: #fff; stroke-width: 1.6; }
+.country.s-visited.is-linked, .country.s-home.is-linked { fill: #ffd56e; }
+.country.s-current.is-linked { fill: #7fd3d8; }
 .country.is-faded { opacity: .35; }
 .country.is-replay-off { fill: #16205a; filter: none; animation: none; }
 .map__dust { position: absolute; inset: 0; pointer-events: none; }
@@ -697,16 +699,35 @@ p.about__closing {
 .graph__hint { display: none; font-size: var(--t-xs); color: var(--ivory-3); margin: 6px 0 0; }
 @media (max-width: 960px) { .graph__hint { display: block; } }
 
-/* 10c. Memories (gallery) ------------------------------------------------- */
-.sec--memories { --veil: .82; }
-.gallery { columns: 3 280px; column-gap: 18px; margin-top: 26px; }
-.gallery__item { break-inside: avoid; margin: 0 0 18px; }
-.gallery__item[hidden] { display: none; }
-.gallery__item button { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; }
-.gallery__item img { width: 100%; height: auto; border-radius: 2px; filter: saturate(.9) brightness(.92); transition: filter .4s var(--ease); }
-.gallery__item button:hover img, .gallery__item button:focus-visible img { filter: none; }
-.gallery__item figcaption { padding-top: 8px; font-size: var(--t-sm); color: var(--ivory-2); }
-.gallery__item figcaption small { display: block; font-size: var(--t-xs); color: var(--ivory-3); }
+/* 10c. Memories: the albums under the World map ------------------------- */
+.albums { margin-top: clamp(44px, 6vw, 76px); scroll-margin-top: 90px; }
+.albums[hidden] { display: none; }
+.albums__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 24px; margin-bottom: 16px; }
+.albums__title { display: inline-flex; align-items: center; gap: 10px; font-size: var(--t-xl); }
+.albums__title svg { width: 14px; height: 14px; color: var(--gold); filter: drop-shadow(0 0 6px rgba(242, 193, 78, .6)); }
+.albums__lede { margin: 0; font-size: var(--t-sm); color: var(--ivory-3); }
+.albums__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 200px), 1fr)); gap: clamp(10px, 1.4vw, 18px); }
+.album {
+  position: relative; display: block; aspect-ratio: 4 / 5; border-radius: 10px; overflow: hidden; isolation: isolate;
+  color: var(--ivory); text-decoration: none; background: rgba(243, 234, 219, .05); border: 1px solid var(--line-faint);
+  transition: transform .5s var(--ease-out), border-color .35s var(--ease), box-shadow .5s var(--ease);
+}
+.album__img, .album__img img { position: absolute; inset: 0; width: 100%; height: 100%; }
+.album__img img { object-fit: cover; filter: saturate(.92) brightness(.9); transition: transform .9s var(--ease-out), filter .4s var(--ease); }
+.album::after { content: ''; position: absolute; inset: 0; z-index: 0; pointer-events: none; background: linear-gradient(to top, rgba(3, 8, 40, .92) 0, rgba(3, 8, 40, .5) 34%, rgba(3, 8, 40, 0) 64%); }
+.album__text { position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; display: grid; gap: 4px; padding: 14px 14px 13px; }
+.album__name { display: flex; align-items: center; gap: 8px; font-family: var(--serif); font-size: var(--t-lg); line-height: 1.15; font-variation-settings: 'opsz' 24, 'SOFT' 100; }
+.album__flag { flex: none; width: 22px; height: auto; border-radius: 2px; box-shadow: 0 1px 6px rgba(0, 0, 0, .45); }
+.album__meta { font-size: var(--t-xs); color: var(--ivory-2); letter-spacing: .02em; }
+.album:hover, .album:focus-visible { transform: translateY(-3px); border-color: var(--line); box-shadow: 0 14px 30px rgba(0, 0, 0, .35); }
+.album:hover img, .album:focus-visible img { transform: scale(1.05); filter: none; }
+.album:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 3px; }
+@media (max-width: 520px) {
+  .albums__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .album__text { padding: 11px 11px 10px; }
+  .albums__grid > li:last-child:nth-child(odd) { grid-column: 1 / -1; }   /* an odd one out spans the row */
+  .albums__grid > li:last-child:nth-child(odd) .album { aspect-ratio: 16 / 9; }
+}
 .lightbox figcaption p { max-width: 60ch; margin: 8px auto 0; color: var(--ivory-2); }
 
 /* 11. Palette ----------------------------------------------------------------- */
@@ -811,8 +832,6 @@ p.about__closing {
 .certs__also ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); gap: 10px 32px; }
 .certs__also li { display: grid; gap: 2px; padding-top: 10px; border-top: 1px solid var(--line-faint); font-size: var(--t-sm); }
 .certs__also .i { font-size: var(--t-xs); color: var(--ivory-3); }
-.gallery__more-row { margin: 8px 0 0; text-align: center; }
-.gallery__more-row:empty, .gallery__more[hidden] { display: none; }
 .courses { margin-top: clamp(56px, 8vw, 96px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
 .courses h4 { font-family: var(--serif); font-style: italic; font-size: var(--t-lg); color: var(--moon); font-weight: 340; margin-bottom: 10px; font-variation-settings: 'opsz' 24, 'SOFT' 100; }
 .courses ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: var(--t-sm); color: var(--ivory-2); }
@@ -936,6 +955,12 @@ p.about__closing {
 .cp__status i { width: 8px; height: 8px; border-radius: 50%; }
 .cp__name { font-size: var(--t-3xl); margin-bottom: 10px; }
 .cp__head { font-family: var(--serif); font-style: italic; font-size: var(--t-lg); color: var(--moon); font-variation-settings: 'opsz' 24, 'SOFT' 100; margin-bottom: 26px; }
+.cp__jump { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 22px; padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line-faint); background: rgba(5, 10, 46, .5); color: var(--ivory-2); font-size: var(--t-xs); cursor: pointer; transition: color .25s, border-color .25s; }
+.cp__head + .cp__jump { margin-top: -12px; }
+.cp__jump:hover { color: var(--ivory); border-color: var(--line); }
+.cp__status-star { display: inline-flex; color: var(--gold); }
+.cp__status-star svg { width: 11px; height: 11px; }
+.cp--album .cp__status { position: relative; margin-top: 4px; }
 .cp h3 { font-family: var(--sans); font-size: var(--t-xs); font-weight: 500; color: var(--ivory-3); letter-spacing: .02em; margin: 28px 0 10px; }
 .cp p { color: var(--ivory-2); }
 /* places in a country: the province/state map, then each place with its photos */

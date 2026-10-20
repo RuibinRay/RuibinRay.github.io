@@ -219,6 +219,10 @@
       });
       var found = RJY.photos.index()[code];
       var countryPhotos = (country.photos || []).filter(function (x) { return x && x.src && x.public !== false; });
+      // photos listed in data/gallery.js with this country join it too
+      ((SITE.gallery && SITE.gallery.photos) || []).forEach(function (x) {
+        if (x && x.src && x.public !== false && x.country === code) countryPhotos.push(x);
+      });
       if (found) {
         Object.keys(found.folders).forEach(function (key) {
           var f = found.folders[key];

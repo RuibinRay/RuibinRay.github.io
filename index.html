@@ -33,7 +33,7 @@
   <link rel="preload" href="assets/fonts/fraunces-var.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/fonts/instrument-sans-500.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="preload" href="assets/painting/painting-blur.jpg" as="image">
-  <link rel="stylesheet" href="assets/css/site.css?v=20261020d">
+  <link rel="stylesheet" href="assets/css/site.css?v=20261020e">
   <script>document.documentElement.className = 'js';</script>
   <script type="application/ld+json">
   {"@context":"https://schema.org","@type":"Person","name":"Ruibin Jin Yao","alternateName":["Ray","Edwin Ruibin Jin Yao"],"url":"https://ruibinray.github.io/","alumniOf":[{"@type":"CollegeOrUniversity","name":"Hult International Business School"},{"@type":"School","name":"Lincoln School, Costa Rica"}],"knowsLanguage":["en","es","zh"],"email":"mailto:ruibinjinyao@gmail.com","sameAs":["https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239","https://github.com/RuibinRay","https://www.instagram.com/ruibin.jin/","https://x.com/RuibinJin","https://www.facebook.com/ruibin.jin.9"]}
@@ -132,23 +132,13 @@
         <header class="sec__head reveal">
           <p class="sec__kicker" data-kicker>World</p>
           <h2 class="sec__title" id="world-title">A world still waiting to be discovered</h2>
-          <p class="sec__lede">Countries I know light up. Select one to open its chapter; the dark ones are still ahead of me.</p>
+          <p class="sec__lede">Countries I know light up. Select one to open its chapter and photos; the dark ones are still ahead of me.</p>
         </header>
         <div class="atlas reveal" data-render="atlas">
           <div class="map"><div class="map__loading">Drawing the map…</div></div>
         </div>
-      </div>
-    </section>
-
-    <!-- MEMORIES — photo gallery. Hidden until there is a photo: in assets/photos/, data/gallery.js or data/travel.js -->
-    <section id="memories" class="sec sec--memories" aria-labelledby="memories-title" data-camera="memories" hidden>
-      <div class="sec__inner">
-        <header class="sec__head reveal">
-          <p class="sec__kicker" data-kicker>Memories</p>
-          <h2 class="sec__title" id="memories-title">Moments worth keeping</h2>
-          <p class="sec__lede">Photos from places, people and projects. Select one to see it larger.</p>
-        </header>
-        <div data-render="gallery"></div>
+        <!-- MEMORIES — an album for each country with photos (data/travel.js, assets/photos/), plus data/gallery.js -->
+        <div class="albums reveal" id="memories" data-render="albums" hidden></div>
       </div>
     </section>
 
@@ -225,23 +215,22 @@
   </noscript>
 
   <!-- Content (edit these files) -->
-  <script src="data/site.js?v=20261020d"></script>
-  <script src="data/journey.js?v=20261020d"></script>
-  <script src="data/work.js?v=20261020d"></script>
-  <script src="data/palette.js?v=20261020d"></script>
-  <script src="data/travel.js?v=20261020d"></script>
-  <script src="data/gallery.js?v=20261020d"></script>
+  <script src="data/site.js?v=20261020e"></script>
+  <script src="data/journey.js?v=20261020e"></script>
+  <script src="data/work.js?v=20261020e"></script>
+  <script src="data/palette.js?v=20261020e"></script>
+  <script src="data/travel.js?v=20261020e"></script>
+  <script src="data/gallery.js?v=20261020e"></script>
   <!-- Code -->
-  <script src="assets/js/painting.js?v=20261020d"></script>
-  <script src="assets/js/ui.js?v=20261020d"></script>
-  <script src="assets/js/brush.js?v=20261020d"></script>
-  <script src="assets/js/places.js?v=20261020d"></script>
-  <script src="assets/js/sections.js?v=20261020d"></script>
-  <script src="assets/js/journey.js?v=20261020d"></script>
-  <script src="assets/js/work.js?v=20261020d"></script>
-  <script src="assets/js/atlas.js?v=20261020d"></script>
-  <script src="assets/js/constellation.js?v=20261020d"></script>
-  <script src="assets/js/gallery.js?v=20261020d"></script>
-  <script src="assets/js/main.js?v=20261020d"></script>
+  <script src="assets/js/painting.js?v=20261020e"></script>
+  <script src="assets/js/ui.js?v=20261020e"></script>
+  <script src="assets/js/brush.js?v=20261020e"></script>
+  <script src="assets/js/places.js?v=20261020e"></script>
+  <script src="assets/js/sections.js?v=20261020e"></script>
+  <script src="assets/js/journey.js?v=20261020e"></script>
+  <script src="assets/js/work.js?v=20261020e"></script>
+  <script src="assets/js/atlas.js?v=20261020e"></script>
+  <script src="assets/js/constellation.js?v=20261020e"></script>
+  <script src="assets/js/main.js?v=20261020e"></script>
 </body>
 </html>

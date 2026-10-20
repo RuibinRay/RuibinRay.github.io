@@ -1,6 +1,6 @@
 # Photos
 
-Photos uploaded here appear on the site by themselves: inside each country on the World map (under the city or province they belong to) and in the Memories gallery. There's no code to edit.
+Photos uploaded here appear on the site by themselves: inside each country on the World map (under the city or province they belong to), and in the country's album under the map. There's no code to edit.
 
 ## Where they go
 

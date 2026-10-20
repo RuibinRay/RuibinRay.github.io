@@ -24,7 +24,7 @@
   render('contact', RJY.renderContact);
   render('footer', RJY.renderFooter);
   render('atlas', RJY.renderAtlas);
-  render('gallery', RJY.renderGallery);
+  render('albums', RJY.renderAlbums);
   RJY.route.on('skills', function (id) { RJY.sheet.close(true); RJY.flashSkill(id); });
   document.querySelectorAll('[data-kicker]').forEach(function (k) { k.insertAdjacentHTML('afterbegin', RJY.starIcon()); });
   document.querySelectorAll('[data-cta]').forEach(function (a) {
@@ -466,7 +466,6 @@
     about:         { z: 1.22, cx: 0.32, cy: 0.42, dim: 0.22, tint: [1.07, 1.0, 0.88],  sat: 1.08, flow: 1.0, glow: 1.1 },   // warm: the figure and the bright star
     journey:       { z: 1.38, cx: 0.53, cy: 0.29, dim: 0.26, tint: [0.9, 0.97, 1.12],  sat: 1.15, flow: 1.3, glow: 1.0 },   // the great spiral, cool and moving
     world:         { z: 1.5, cx: 0.62, cy: 0.74, dim: 0.26, tint: [0.84, 1.05, 1.05], sat: 1.05, flow: 0.9, glow: 0.9 },   // the sea, teal
-    memories:      { z: 1.56, cx: 0.33, cy: 0.62, dim: 0.26, tint: [1.08, 0.97, 0.84], sat: 0.7, flow: 0.7, glow: 1.0 },   // the figure, faded like a photograph
     work:          { z: 1.64, cx: 0.74, cy: 0.34, dim: 0.2, tint: [0.98, 0.9, 1.12],  sat: 1.12, flow: 1.2, glow: 1.15 },  // the second spiral, violet
     palette:       { z: 1.74, cx: 0.4, cy: 0.14, dim: 0.24, tint: [1.04, 1.0, 0.97],  sat: 1.4, flow: 1.0, glow: 1.1 },    // the stars, colours at their richest
     constellation: { z: 1.84, cx: 0.52, cy: 0.17, dim: 0.32, tint: [0.84, 0.9, 1.14],  sat: 0.8, flow: 0.55, glow: 1.5 },  // deep night, the stars brightest
@@ -479,7 +478,7 @@
       var y0 = window.pageYOffset;
       this.keys = [{ y: 0, cam: 'hero' }];
       document.querySelectorAll('[data-camera]').forEach(function (s) {
-        if (s.hidden || !s.getClientRects().length) return;   // a hidden section (Memories before any photos)
+        if (s.hidden || !s.getClientRects().length) return;   // a section that isn't shown
         var top = s.getBoundingClientRect().top + y0;
         var lead = s.classList.contains('sec--first') ? vh() * 0.25 : 0;   // let the dissolve play before arriving
         camera.keys.push({ y: Math.max(1, top + lead - vh() * 0.15), cam: s.dataset.camera, el: s });

@@ -16,7 +16,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 | About: *Beyond the Horizon* | "Three cultures. Three languages. One global perspective.": your introduction, four short chapters (Where I'm From, Three Languages, What Drives Me with your five interests, Looking Beyond), an *At a Glance* card with small flags, then education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` → `about` (`tagline`, `intro`, `chapters`, `glance`) |
 | Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year. An entry can show photos (the HJAT internship shows the VRFB competition photo, its certificate and the completion letter); they open full size. | `data/journey.js` |
 | World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a cover photo, a map of its provinces/states with the cities you've been to, then the photos from each place as a mosaic (the first one large; long sets show six and a *Show all* button). Photos open full size, sharp on any screen. On phones the map keeps its full width and is swiped sideways. | `data/travel.js`; photos in `assets/media/travel/` (prepared) or `assets/photos/` (uploaded) |
-| Memories | Every photo on the site in one gallery, with filters by kind and country. It opens with 24 photos and a *Show all* button. **It stays hidden until there's at least one photo.** | `data/gallery.js`, `data/travel.js`, `assets/photos/` |
+| Memories (in World, under the map) | An album for each country with photos: its cover, flag and photo count. Choosing one opens the country's chapter, the same as choosing it on the map, and pointing at it lights the country up on the map. Photos that aren't from a country's travels (friends, Koko) make albums of their own, by category. Pointing at a country on the map shows its photo count too. | `data/travel.js`, `assets/photos/`, `data/gallery.js` |
 | Projects: *My Constellations* | Your work as constellations, each star opening a full case study. Below them, *All projects* lists every project by field, each title written on a brushstroke in its field's colour. | `data/work.js` |
 | Skills: *My Palette* | Skills as brushstrokes of paint. Point at a colour (or tap it on a phone, or Tab to it) and the band widens: the skill, its tools and the work where it shows appear beside the paint, while the others dim. Also languages (Mandarin as your primary language, Spanish native, English fluent), your certificates and coursework. Each certificate is shown as an image that opens full size, with a *Verify* link where the issuer has one, and filters by issuer (Internship, Google AI, Finance, DataCamp, Other). | `data/palette.js` (the chips are each skill's `tools`); languages are `profile.languages` and certificates `certifications` in `data/site.js` |
 | *How it all connects* | Every place, milestone, project and skill as one star chart (plain SVG, no chart library). The stars drift gently and the lines follow them. The lines come from the `related` links in your data. On phones the chart keeps its size and is swiped sideways. | the `related` fields |
@@ -39,7 +39,7 @@ Three rules the site follows:
 ### Things still worth adding (open `?draft` to see them all)
 
 - [ ] **The cities and provinces/states you visited** in Canada, South Korea, China and the US: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
-- [ ] **Photos from China and South Korea** (Costa Rica, the US and Canada have theirs): see *Adding photos*.
+- [ ] **Photos from China and South Korea**: China has one so far (the VRFB competition in Shenyang), South Korea none. See *Adding photos*.
 - [ ] **Your teaching role in Costa Rica**: the organization, your role, the dates and any photos, for a new entry in `data/journey.js`.
 - [ ] **The "Tech on the Go: No-Code for Coders" certificate PDF**, so it can show as an image like the others (it's listed as text for now).
 - [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
@@ -140,13 +140,13 @@ assets/photos/<COUNTRY>/<photo>.jpg             the country in general ("Around 
 ```
 
 - On github.com, open `assets/photos`, click into the country (or place) folder, then **Add file → Upload files**. For a new place, drag in a whole folder named after it, like `seoul`.
-- A photo shows under its city or province/state in the country's chapter on the World map **and** in the Memories gallery. A new place folder also lights up that place on the country's map.
+- A photo shows under its city or province/state in the country's chapter on the World map, and counts in the country's album under the map (a country's first photos also create its album). A new place folder also lights up that place on the country's map.
 - The file name becomes the caption (`2026-07-12 Zhongjie at night.jpg` → "Zhongjie at night", Jul 2026).
 - Use JPG, PNG or WebP around 2000 px and under ~500 KB (export iPhone HEIC photos as JPEG first). Remove the GPS location from photos you don't want to reveal it: the repository is public.
 
 [`assets/photos/README.md`](assets/photos/README.md) has the details. The site finds new photos by asking GitHub's API for the list of files (GitHub Pages can't list folders by itself). If GitHub doesn't answer, it shows the photos it already knows about.
 
-Photos can also be listed by hand, with a longer caption or a story: in `data/gallery.js` (category, place, date, story) or under a place in `data/travel.js`. Set `public: false` on a listed photo to keep it off the site. The Memories section and its menu link only appear once there's at least one public photo.
+Photos can also be listed by hand, with a longer caption or a story, under a place in `data/travel.js`. Photos that aren't from a country's travels (friends, family, campus life) go in `data/gallery.js`: each `category` becomes an album under the map (a photo there with a `country` joins that country's chapter instead). Set `public: false` on a listed photo to keep it off the site. The albums only appear once there's at least one public photo.
 
 ### Prepared photos and certificates (`assets/media/`)
 
@@ -157,7 +157,7 @@ assets/media/travel/<country>/<place>/<place>-01.webp      2048 px on the long s
 assets/media/travel/<country>/<place>/<place>-01-1080.webp  1080 px
 assets/media/travel/<country>/<place>/<place>-01-480.webp   480 px (thumbnails)
 assets/media/travel/<country>/<country>-01.webp             the country in general
-assets/media/life/…  (Memories: friends, Koko)   assets/media/journey/hjat/…   assets/media/certificates/…
+assets/media/life/…  (the Friends & Koko album)   assets/media/journey/hjat/…   assets/media/certificates/…
 ```
 
 In the data files they're listed by the largest file with its width and height, e.g. `{ src: 'assets/media/travel/cri/arenal/arenal-01.webp', w: 1536, h: 2048, caption: 'Kayaking in Arenal' }`. The site works out the other two sizes, and each photo only loads when it comes into view.
@@ -228,7 +228,7 @@ Never commit passwords, API keys or anything private. Everything in this reposit
 - **Still things:** the figure, driftwood, rocks, headland and horizon are masked out and never move. Only a faint moonlight shimmer touches the wood.
 - **Stars and the moon** stay exactly where they are painted. Each pulses at its own pace and now and then shimmers. A doorway star senses the pointer: it swells about 12%, its strokes swirl, a golden halo opens and the sky around it bends toward it. Clicking it flies the camera through the star into its section in about a second. The opening differs by section: the strokes part for World, a star-scattered iris for Experience and Projects, a softer dissolve for About.
 - Moving the mouse shifts the sky a few pixels against the foreground for depth.
-- **Scrolling moves a camera through the painting while it keeps moving.** Each section has its own framing and colour mood, and the camera glides between them as you scroll (the zoom deepens section by section; About is warmer, Experience cooler with faster currents, World sea-green, Memories sepia, Projects violet, My Palette richer in colour, *How it all connects* deep blue with brighter stars), then pulls back to the whole painting for Contact. The settings are `CAMS` in `assets/js/main.js`: `z` zoom, `cx`/`cy` where to look (0–1 across the painting), `dim` darkening, `tint` (red, green, blue), `sat` saturation, `flow` paint speed, `glow` star brightness. The veils behind the text thin out where two sections meet, so the change shows while you scroll.
+- **Scrolling moves a camera through the painting while it keeps moving.** Each section has its own framing and colour mood, and the camera glides between them as you scroll (the zoom deepens section by section; About is warmer, Experience cooler with faster currents, World sea-green, Projects violet, My Palette richer in colour, *How it all connects* deep blue with brighter stars), then pulls back to the whole painting for Contact. The settings are `CAMS` in `assets/js/main.js`: `z` zoom, `cx`/`cy` where to look (0–1 across the painting), `dim` darkening, `tint` (red, green, blue), `sat` saturation, `flow` paint speed, `glow` star brightness. The veils behind the text thin out where two sections meet, so the change shows while you scroll.
 - This is plain JavaScript in the painting's own render loop: the scroll position sets a target and the camera eases toward it every frame. GSAP with ScrollTrigger would do the same job but adds about 115 KB and a second animation loop.
 - **It moves on its own.** The round ❚❚ button in the navigation pauses and resumes it (remembered in that browser), as accessibility guidelines ask for anything that moves by itself. Paused, the painting also stops zooming with the scroll and holds its opening framing.
 - **Reduce motion:** with *Reduce motion* turned on in the device's settings, the painting keeps moving, but calmly: the paint flows at under half the speed, the spirals hold still, no stars flare, and star doorways fade instead of flying. Scrolling still glides the camera and changes the colours; the pause button stops all of it.
@@ -265,14 +265,14 @@ data/                   ← your content
   work.js                 projects and case studies
   palette.js              skills and tools
   travel.js               the atlas: countries, places, trips
-  gallery.js              hand-listed photos (optional)
+  gallery.js              photos that aren't from a country's travels: albums by category
   world.js                country borders (generated, don't edit)
   regions/                provinces/states and cities of each country (generated, don't edit)
 assets/
   photos/                 ← your photos: <COUNTRY>/<place>/  (see its README)
   media/                  prepared photos and certificates in three sizes (travel/, life/, journey/, certificates/)
   css/site.css            all styles
-  js/                     painting.js · main.js · ui.js · brush.js · places.js · sections.js · journey.js · work.js · atlas.js · constellation.js · gallery.js
+  js/                     painting.js · main.js · ui.js · brush.js · places.js · sections.js · journey.js · work.js · atlas.js (map, chapters, albums) · constellation.js
   painting/               the artwork in three sizes, motion maps, embedded.js (local preview)
   fonts/ flags/ img/ vendor/
 tools/                  prepare_media.py, build_flow_maps.py, make_embedded.py, build_regions.mjs, source/painting-original.jpg

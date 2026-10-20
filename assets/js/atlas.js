@@ -7,6 +7,9 @@
  *
  * Draft mode (?draft): status buttons in the country panel save to this browser's localStorage,
  * and "Download travel.js" exports the updated data file to commit to the repository.
+ *
+ * Memories live here too: under the map, an album for each country with photos opens the same
+ * chapter as the map, and photos without a country (data/gallery.js) form albums of their own.
  */
 (function () {
   'use strict';
@@ -53,7 +56,9 @@
     root = container;
     mapEl = root.querySelector('.map');
     RJY.route.on('world', function (code) {
-      RJY.scrollTo(document.getElementById('world'), { offset: 40 });
+      // from elsewhere on the page, travel to the map first; from the map or the albums, stay put
+      var fr = (root.querySelector('.map-frame') || root).getBoundingClientRect();
+      if (fr.bottom < 80 || fr.top > window.innerHeight - 80) RJY.scrollTo(document.getElementById('world'), { offset: 40 });
       if (ready) openCountry(code.toUpperCase(), true); else { pendingOpen = code.toUpperCase(); start(); }
     });
     if ('IntersectionObserver' in window) {
@@ -177,8 +182,8 @@
       svgEl.addEventListener('pointermove', function (e) {
         var code = e.target.getAttribute && e.target.getAttribute('data-code');
         if (!code) { tip.style.opacity = 0; return; }
-        var r = mapEl.getBoundingClientRect(), st = statusOf(code);
-        tip.innerHTML = '<b>' + RJY.esc(nameOf(code)) + '</b><span>' + STATUS_TEXT[st] + '</span>';
+        var r = mapEl.getBoundingClientRect(), st = statusOf(code), n = LIT[st] ? photoCount(code) : 0;
+        tip.innerHTML = '<b>' + RJY.esc(nameOf(code)) + '</b><span>' + STATUS_TEXT[st] + (n ? ' · ' + photosText(n) : '') + '</span>';
         tip.style.left = (e.clientX - r.left) + 'px'; tip.style.top = (e.clientY - r.top) + 'px'; tip.style.opacity = 1;
       });
       svgEl.addEventListener('pointerleave', function () { tip.style.opacity = 0; });
@@ -284,7 +289,8 @@
 
   function below() {
     belowEl = h('div', { class: 'atlas__below' });
-    root.appendChild(belowEl);
+    if (albumsEl && albumsEl.parentNode) albumsEl.parentNode.insertBefore(belowEl, albumsEl.nextSibling);
+    else root.appendChild(belowEl);
     renderBelow();
   }
   function renderBelow() {
@@ -454,6 +460,11 @@
       h('h2', { class: 'cp__name', text: nameOf(code) }));
     if (LIT[st]) {
       if (has(c.headline)) el.appendChild(h('p', { class: 'cp__head', text: c.headline }));
+      var nPhotos = photoCount(code);
+      if (nPhotos) el.appendChild(h('button', { type: 'button', class: 'cp__jump', onclick: function () {
+        var to = el.querySelector('.cp__places > h3') || el.querySelector('.cp__places-wrap');
+        if (to) to.scrollIntoView({ behavior: RJY.reducedMotion ? 'auto' : 'smooth', block: 'start' });
+      } }, photosText(nPhotos), h('span', { 'aria-hidden': 'true', text: '↓' })));
       if (has(c.years)) { el.appendChild(h('h3', { text: 'When' })); el.appendChild(h('p', { text: c.years.join(', ') })); }
       el.appendChild(placesBlock(code, c));
       var trips = (SITE.travel.trips || []).filter(function (t) { return t.country === code; });
@@ -493,13 +504,15 @@
   // A place's photos as a mosaic: the first one large, the rest in a grid. Long sets show six
   // and a button for the rest. Captions show on the photos unless they only repeat the place's name.
   var SHOW = 6;
-  // how wide each kind of tile is drawn (the drawer is 600 px wide on large screens), so the
-  // browser picks the right file: 480, 1080 or 2048 px
-  var TILE = {
-    one: '(max-width: 640px) 90vw, 500px', half: '(max-width: 640px) 45vw, 250px',
-    big: '(max-width: 640px) 60vw, 335px', small: '(max-width: 640px) 30vw, 165px',
-    wide2: '(max-width: 640px) 60vw, 335px', wide3: '(max-width: 640px) 90vw, 500px'
-  };
+  // How wide each kind of tile is drawn — on a phone (vw), in the 600 px drawer (px) — and its shape,
+  // so the browser picks the right file (480, 1080 or 2048 px). A photo wider than its tile is cropped
+  // at the sides and drawn larger, so it asks for a bigger file.
+  var TILE = { one: [90, 500, 3 / 2], half: [45, 250, 1], big: [60, 335, 1], small: [30, 165, 1], wide2: [60, 335, 2], wide3: [90, 500, 3] };
+  function coverSizes(vw, px, shape, p) {
+    var k = p && p.w && p.h ? Math.max(1, (p.w / p.h) / shape) : 1;
+    return '(max-width: 640px) ' + Math.round(vw * k) + 'vw, ' + Math.round(px * k) + 'px';
+  }
+  function tileSizes(kind, p) { var t = TILE[kind]; return coverSizes(t[0], t[1], t[2], p); }
   // the last photo widens to fill its row: two beside the large photo, then rows of three
   function fitMosaic(grid) {
     var vis = Array.prototype.filter.call(grid.children, function (b) { return !b.hidden; });
@@ -511,21 +524,23 @@
     var last = vis[vis.length - 1], wide = rem === 1 ? 'wide3' : 'wide2', img = last.querySelector('img');
     last.classList.add('is-' + wide);
     // a wider tile needs a larger file (a tile that narrows again keeps the one it has)
-    if (img && img.getAttribute('sizes') === TILE.small) img.setAttribute('sizes', TILE[wide]);
+    if (img && img.dataset.tile === 'small' && img.hasAttribute('sizes')) { img.setAttribute('sizes', tileSizes(wide, last._photo)); img.dataset.tile = wide; }
   }
   function gallery(list, place) {
     var n = list.length, more = n > SHOW + 1;
     var grid = h('div', { class: 'cp__gallery' + (n === 1 ? ' is-one' : n === 2 ? ' is-two' : '') });
     list.forEach(function (p, k) {
       var label = p.caption || p.alt || (place ? 'Photo from ' + place : 'Photo');
-      var big = k === 0 && n > 2;
+      var big = k === 0 && n > 2, kind = n === 1 ? 'one' : n === 2 ? 'half' : big ? 'big' : 'small';
       var b = h('button', { type: 'button', class: 'cp__shot' + (big ? ' is-big' : ''), hidden: more && k >= SHOW ? true : null, 'aria-label': 'Open photo: ' + label, onclick: function () {
         var ok = list.filter(function (q) { return !q.broken; });
         RJY.lightbox(p, ok, ok.indexOf(p));
       } },
         // alt is empty: the button's label already names the photo
-        RJY.picture(p, { sizes: TILE[n === 1 ? 'one' : n === 2 ? 'half' : big ? 'big' : 'small'], alt: '', onerror: function () { p.broken = true; b.hidden = true; b.setAttribute('data-broken', ''); } }),
+        RJY.picture(p, { sizes: tileSizes(kind, p), alt: '', onerror: function () { p.broken = true; b.hidden = true; b.setAttribute('data-broken', ''); } }),
         has(p.caption) && (!place || RJY.places.norm(p.caption) !== RJY.places.norm(place)) ? h('span', { class: 'cp__shot-cap', text: p.caption }) : null);
+      b._photo = p;
+      var im = b.querySelector('img'); if (im) im.dataset.tile = kind;
       grid.appendChild(b);
     });
     if (n > 2) fitMosaic(grid);
@@ -742,6 +757,7 @@
 
   // New photos found in the repository: refresh the map, the numbers and an open country.
   document.addEventListener('rjy:photos', function () {
+    counts = null; renderAlbums();
     if (!ready) return;
     paint(); renderBelow();
     if (currentPlaces && currentPlaces.isConnected && currentPlaces._refresh) currentPlaces._refresh();
@@ -757,7 +773,7 @@
           var e = edits(); e[code] = o[0];
           var inFile = (SITE.travel.countries || []).filter(function (x) { return x.code === code; })[0];
           if ((inFile ? inFile.status : 'none') === o[0]) delete e[code];
-          saveEdits(e); paint(); renderBelow(); openCountry(code, false);
+          saveEdits(e); counts = null; paint(); renderBelow(); renderAlbums(); openCountry(code, false);
         } }, o[1]);
       })),
       h('p', { text: 'Saved only in this browser. Use “Download travel.js” below the map and replace data/travel.js in your repository to publish it.' }));
@@ -769,7 +785,7 @@
       h('p', { text: n ? n + ' local change' + (n === 1 ? '' : 's') + ' not yet published.' : 'No local changes. Open a country and use the edit buttons.' }),
       h('div', { class: 'btn-row' },
         h('button', { class: 'btn', type: 'button', onclick: exportFile, disabled: n ? null : true }, 'Download travel.js'),
-        h('button', { class: 'btn btn--ghost', type: 'button', disabled: n ? null : true, onclick: function () { if (confirm('Discard all local atlas changes in this browser?')) { saveEdits({}); paint(); renderBelow(); } } }, 'Discard local changes')));
+        h('button', { class: 'btn btn--ghost', type: 'button', disabled: n ? null : true, onclick: function () { if (confirm('Discard all local atlas changes in this browser?')) { saveEdits({}); counts = null; paint(); renderBelow(); renderAlbums(); } } }, 'Discard local changes')));
   }
 
   function exportFile() {
@@ -799,6 +815,104 @@
     }
     new IntersectionObserver(function (es) { vis = es[0].isIntersecting; cancelAnimationFrame(raf); if (vis) raf = requestAnimationFrame(frame); }).observe(mapEl);
   }
+
+  /* ---------- Memories: the albums under the map ----------
+     One album per country with photos (its cover, flag, name and counts). Selecting it opens the
+     country's chapter, exactly like selecting the country on the map, and pointing at it lights the
+     country up on the map. Photos without a country (data/gallery.js) make albums by category,
+     opened at #memories/<album>. */
+  var albumsEl = null, counts = null;
+  function photosText(n) { return n + (n === 1 ? ' photo' : ' photos'); }
+  function ratio(p) { return p && p.w && p.h ? p.w / p.h : 4 / 3; }
+  function photosIn(c, P) {
+    var n = P.photos.length;
+    P.places.forEach(function (x) { n += x.photos.length; });
+    (SITE.travel.trips || []).forEach(function (t) { if (t.country === c.code) n += (t.photos || []).length; });
+    return n;
+  }
+  function photoCount(code) {
+    if (!counts) {
+      counts = {};
+      countries().forEach(function (c) { counts[c.code] = photosIn(c, RJY.places.forCountry(c)); });
+    }
+    return counts[code] || 0;
+  }
+  function albumCover(c, P) {
+    var all = [];
+    P.places.forEach(function (x) { all = all.concat(x.photos); });
+    all = all.concat(P.photos);
+    if (has(c.cover)) return all.filter(function (x) { return x.src === c.cover; })[0] || { src: c.cover };
+    return all[0] || null;
+  }
+  function otherAlbums() {
+    var list = [], by = {};
+    ((SITE.gallery && SITE.gallery.photos) || []).forEach(function (p) {
+      if (!p || !has(p.src) || p.public === false || has(p.country)) return;   // a country's photos are in its chapter
+      var title = has(p.category) ? p.category : 'Moments';
+      var g = by[title];
+      if (!g) { g = by[title] = { title: title, slug: RJY.places.slug(title), photos: [] }; list.push(g); }
+      g.photos.push(p);
+    });
+    return list;
+  }
+  function lightOnMap(code, on) { if (paths[code]) paths[code].classList.toggle('is-linked', on); }
+  function albumCard(o) {
+    var meta = photosText(o.count) + (o.places ? ' · ' + o.places + (o.places === 1 ? ' place' : ' places') : '');
+    var a = h('a', { class: 'album', href: o.href },
+      h('span', { class: 'album__img' }, o.cover ? RJY.picture(o.cover, { sizes: (o.wide ? '(max-width: 520px) ' + Math.round(92 * Math.max(1, ratio(o.cover) / (16 / 9))) + 'vw, ' : '') + coverSizes(46, 240, 4 / 5, o.cover), alt: '' }) : null),
+      h('span', { class: 'album__text' },
+        h('span', { class: 'album__name' }, o.flag ? h('img', { class: 'album__flag', src: o.flag, alt: '', width: 24, height: 18 }) : null, o.name),
+        h('span', { class: 'album__meta', text: meta })));
+    if (o.code) ['mouseenter', 'focus'].forEach(function (ev) { a.addEventListener(ev, function () { lightOnMap(o.code, true); }); });
+    if (o.code) ['mouseleave', 'blur'].forEach(function (ev) { a.addEventListener(ev, function () { lightOnMap(o.code, false); }); });
+    return h('li', null, a);
+  }
+  function renderAlbums() {
+    if (!albumsEl) return;
+    var cards = [];
+    countries().filter(function (c) { return LIT[c.status]; }).forEach(function (c) {
+      var P = RJY.places.forCountry(c), n = photosIn(c, P);
+      if (n) cards.push({ href: '#world/' + c.code, code: c.code, name: nameOf(c.code), flag: RJY.flagSrc(c.code), count: n, places: P.places.length, cover: albumCover(c, P) });
+    });
+    otherAlbums().forEach(function (g) {
+      cards.push({ href: '#memories/' + g.slug, name: g.title, count: g.photos.length, cover: g.photos[0] });
+    });
+    // on phones an odd last album spans the row (site.css), so its cover is drawn wider
+    if (cards.length % 2) cards[cards.length - 1].wide = true;
+    // nothing changed (e.g. the photo folders were listed and held nothing new): keep the cards as they are
+    var sig = JSON.stringify(cards.map(function (o) { return [o.href, o.count, o.places, o.cover && o.cover.src, o.wide]; }));
+    if (sig === albumsEl._sig) return;
+    albumsEl._sig = sig;
+    cards = cards.map(albumCard);
+    albumsEl.innerHTML = '';
+    albumsEl.hidden = !cards.length;
+    if (!cards.length) return;
+    albumsEl.appendChild(h('div', { class: 'albums__head' },
+      h('h3', { class: 'albums__title' }, h('span', { html: RJY.starIcon() }), 'Memories'),
+      h('p', { class: 'albums__lede', text: 'The photos from each country live in its chapter. Choose one here or on the map.' })));
+    albumsEl.appendChild(h('ul', { class: 'albums__grid', role: 'list' }, cards));
+  }
+  function openAlbum(slug) {
+    var g = otherAlbums().filter(function (x) { return x.slug === slug; })[0];
+    if (!g) { RJY.sheet.close(true); RJY.scrollTo(albumsEl); return; }
+    RJY.sheet.open({
+      kind: 'drawer',
+      label: g.title,
+      render: function (body) {
+        body.appendChild(h('div', { class: 'cp has-cover cp--album' },
+          h('figure', { class: 'cp__cover' }, RJY.picture(g.photos[0], { full: true, eager: true, sizes: '(max-width: 640px) 100vw, 640px', alt: '' })),
+          h('p', { class: 'cp__status' }, h('span', { class: 'cp__status-star', html: RJY.starIcon() }), 'Memories'),
+          h('h2', { class: 'cp__name', text: g.title }),
+          h('p', { class: 'cp__head', text: photosText(g.photos.length) }),
+          gallery(g.photos, g.title)));
+      }
+    });
+  }
+  RJY.renderAlbums = function (el) {
+    albumsEl = el;
+    renderAlbums();
+    RJY.route.on('memories', openAlbum);
+  };
 
   RJY.atlas = { open: function (code) { RJY.route.go('#world/' + code); } };
 })();

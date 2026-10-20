@@ -112,7 +112,9 @@ SITE.travel = {
       headline: 'My roots, and a summer of work in Shenyang',
       years: [2026],
       places: [
-        { name: 'Shenyang', region: 'Liaoning', note: 'Overseas Sales / Business Development Intern at HJAT, Jun – Aug 2026' },
+        { name: 'Shenyang', region: 'Liaoning', note: 'Overseas Sales / Business Development Intern at HJAT, Jun – Aug 2026', photos: [
+            { src: 'assets/media/journey/hjat/vrfb-knowledge-competition.webp', w: 1706, h: 1279, caption: '1st place in the VRFB knowledge competition at HJAT' }
+          ] },
         { name: 'Shanghai' },
         { name: 'Changchun', region: 'Jilin' },
         { name: 'Kunming', region: 'Yunnan' },
