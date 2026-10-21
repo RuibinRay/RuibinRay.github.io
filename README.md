@@ -13,7 +13,7 @@ Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trac
 | Section | What it is | Edit it in |
 |---|---|---|
 | Home | The painting, animated in WebGL. The sky flows along its own brushstrokes, the ocean rolls on its own, and the figure and driftwood stay still. Seven painted stars are doorways: point at one and it swells, swirls and glows; click it to fly through it into a section. | `data/site.js` (name, tagline); the doorways are `hotspots` in `assets/js/main.js` |
-| About: *Beyond the Horizon* | "Three cultures. Three languages. One global perspective.": your introduction, four short chapters (Where I'm From, Three Languages, What Drives Me with your five interests, Looking Beyond), an *At a Glance* card with small flags, then education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` → `about` (`tagline`, `intro`, `chapters`, `glance`) |
+| About: *Beyond the Horizon* | "Three cultures. Three languages. One global perspective.": your introduction, four short chapters (Where I'm From, Three Languages, What Drives Me with your five interests, Looking Beyond), an *At a Glance* card with small flags and a *Download my résumé* button, then education, the Hult Future Leaders Challenge result and hobbies | `data/site.js` → `about` (`tagline`, `intro`, `chapters`, `glance`); the résumé is `assets/docs/Edwin_Ruibin_Jin_Yao_Resume.pdf` (`links.resume`): to update it, replace that file with a new PDF of the same name |
 | Experience: *The Journey So Far* | Education, work, milestones and certifications as one constellation timeline, with filters by kind and year. An entry can show photos (the HJAT internship shows the VRFB competition photo, its certificate and the completion letter); they open full size. | `data/journey.js` |
 | World: *A world still waiting to be discovered* | An interactive world map (real borders) with visited, current, wishlist and undiscovered countries, statistics, a year filter, a replay and milestones. Each country opens its chapter: a cover photo, a map of its provinces/states with the cities you've been to, then the photos from each place as a mosaic (the first one large; long sets show six and a *Show all* button). Photos open full size, sharp on any screen. On phones the map keeps its full width and is swiped sideways. | `data/travel.js`; photos in `assets/media/travel/` (prepared) or `assets/photos/` (uploaded) |
 | Memories (in World, under the map) | An album for each country with photos: its cover, flag and photo count. Choosing one opens the country's chapter, the same as choosing it on the map, and pointing at it lights the country up on the map. Photos that aren't from a country's travels (friends, Koko) make albums of their own, by category. Pointing at a country on the map shows its photo count too. | `data/travel.js`, `assets/photos/`, `data/gallery.js` |
@@ -41,7 +41,6 @@ Three rules the site follows:
 - [ ] **Any other cities you've visited**: `places` in `data/travel.js`, or simply upload photos into a folder for each place (see *Adding photos*).
 - [ ] **Your teaching at CCECC Costa Rica**: the photos are on the CCECC entry in `data/journey.js`; still to add in words: what you taught, to whom and when.
 - [ ] **The "Tech on the Go: No-Code for Coders" certificate PDF**, so it can show as an image like the others (it's listed as text for now).
-- [ ] **A résumé PDF**: put it at `assets/docs/resume.pdf`, then set `links.resume: 'assets/docs/resume.pdf'`.
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.
 - [ ] **Case-study details**: objective, approach, insights, results, images and links for each project in `data/work.js`.
 - [ ] **Evidence for the Hult Future Leaders Challenge**: `awards[0].evidence` in `data/site.js`.
@@ -270,6 +269,7 @@ data/                   ← your content
 assets/
   photos/                 ← your photos: <COUNTRY>/<place>/  (see its README)
   media/                  prepared photos and certificates in three sizes (travel/, life/, journey/, certificates/)
+  docs/                   the résumé PDF (downloaded from About)
   css/site.css            all styles
   js/                     painting.js · main.js · ui.js · brush.js · places.js · sections.js · journey.js · work.js · atlas.js (map, chapters, albums) · constellation.js
   painting/               the artwork in three sizes, motion maps, embedded.js (local preview)

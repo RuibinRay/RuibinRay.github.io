@@ -41,7 +41,8 @@ SITE.links = {
   facebook: 'https://www.facebook.com/ruibin.jin.9',
   github: 'https://github.com/RuibinRay',
   linkedin: 'https://www.linkedin.com/in/edwin-ruibin-jin-yao-a6b050239',
-  resume: '',                                  // e.g. 'assets/docs/resume.pdf' after you add the file
+  resume: 'assets/docs/Edwin_Ruibin_Jin_Yao_Resume.pdf',   // downloadable from About, under At a Glance (replace the file to update it)
+  resumeNote: 'PDF, one page',                 // the small line under the button
   other: [                                     // more profiles: { label: 'Medium', url: 'https://…' }
   ]
 };

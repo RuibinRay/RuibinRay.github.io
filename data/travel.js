@@ -290,7 +290,14 @@ SITE.travel = {
             { src: 'assets/media/travel/can/toronto/toronto-02.webp', w: 1536, h: 2048, caption: 'Museum' },
             { src: 'assets/media/travel/can/toronto/toronto-03.webp', w: 1536, h: 2048, caption: 'Museum' },
             { src: 'assets/media/travel/can/toronto/toronto-04.webp', w: 1536, h: 2048, caption: 'Museum' },
-            { src: 'assets/media/travel/can/toronto/toronto-05.webp', w: 2048, h: 1536, caption: 'Museum' }
+            { src: 'assets/media/travel/can/toronto/toronto-05.webp', w: 2048, h: 1536, caption: 'Museum' },
+            { src: 'assets/media/travel/can/toronto/toronto-06.webp', w: 1920, h: 1080, caption: 'Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-07.webp', w: 1920, h: 1080, caption: 'Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-08.webp', w: 1437, h: 1080, caption: 'Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-09.webp', w: 1920, h: 1080, caption: 'Nathan Phillips Square, Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-10.webp', w: 1080, h: 1440, caption: 'Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-11.webp', w: 1440, h: 1080, caption: 'Nathan Phillips Square, Toronto' },
+            { src: 'assets/media/travel/can/toronto/toronto-12.webp', w: 1080, h: 1440, caption: 'Toronto' }
           ] }
       ],
       story: '',

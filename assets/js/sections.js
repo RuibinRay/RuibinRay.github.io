@@ -68,14 +68,27 @@
     var photo = has(A.photo && A.photo.src)
       ? h('figure', { class: 'about__photo' }, h('img', { src: A.photo.src, alt: A.photo.alt || 'Portrait of Ray', loading: 'lazy' }))
       : RJY.ph('a portrait or travel photo — about.photo in data/site.js');
+    // the résumé, to download, at the foot of the card (links.resume in data/site.js)
+    var cvUrl = SITE.links && SITE.links.resume, cvName = has(cvUrl) ? String(cvUrl).split('/').pop() : '';
+    var cv = has(cvUrl)
+      ? h('a', { class: 'glance__cv', href: cvUrl, download: cvName, type: /\.pdf$/i.test(cvName) ? 'application/pdf' : null },
+          h('span', { class: 'glance__cv-icon', 'aria-hidden': 'true', html: '<svg viewBox="0 0 16 16"><path d="M8 2v8.2M4.4 6.9 8 10.5l3.6-3.6M3 13.5h10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' }),
+          h('span', { class: 'glance__cv-text' }, h('b', { text: 'Download my résumé' }), has(SITE.links.resumeNote) ? h('small', { text: SITE.links.resumeNote }) : null))
+      : RJY.ph('your résumé — put the PDF in assets/docs/ and set links.resume in data/site.js');
     var glance = h('div', { class: 'glance reveal', role: 'group', 'aria-labelledby': 'glance-title' },
       photo,
       h('h3', { class: 'glance__title', id: 'glance-title', text: 'At a Glance' }),
       h('dl', null, (A.glance || []).filter(function (g) { return has(g.value); }).map(function (g) {
         return h('div', null, h('dt', { text: g.label }), h('dd', null, withScripts(g.value), (g.flags || []).map(flag)));
-      })));
+      })),
+      cv);
 
     root.appendChild(h('div', { class: 'about__body' }, chapters, glance));
+    // the card stays in view while the chapters scroll only when all of it fits on the screen
+    function fitGlance() { glance.classList.toggle('is-tall', glance.offsetHeight + 110 > window.innerHeight); }
+    requestAnimationFrame(fitGlance);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitGlance);
+    var ft; window.addEventListener('resize', function () { clearTimeout(ft); ft = setTimeout(fitGlance, 150); });
   };
 
   RJY.renderEducation = function (root) {

@@ -359,12 +359,28 @@ p.about__closing {
   padding: clamp(22px, 2.4vw, 32px); border: 1px solid var(--line-faint); border-radius: 8px;
   background: rgba(var(--veil-rgb), .55);
 }
-@media (min-width: 901px) and (min-height: 880px) { .glance { position: sticky; top: 96px; } }   /* stays in view while the chapters scroll, when the window is tall enough to show all of it */
+@media (min-width: 901px) and (min-height: 880px) { .glance { position: sticky; top: 96px; } .glance.is-tall { position: static; } }   /* stays in view while the chapters scroll, when the window is tall enough to show all of it (sections.js checks) */
 .glance__title { margin: 0 0 20px; font-family: var(--serif); font-style: italic; font-weight: 360; font-size: var(--t-lg); color: var(--gold); font-variation-settings: 'opsz' 24, 'SOFT' 100; }
 .glance dl { margin: 0; display: grid; gap: 16px; }
 .glance dt { font-size: var(--t-2xs); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ivory-3); }
 .glance dd { margin: 5px 0 0; font-family: var(--serif); font-size: var(--t-md); line-height: 1.38; color: var(--ivory); font-variation-settings: 'opsz' 24, 'SOFT' 100; }
 .glance .zh { font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun', serif; }
+/* the résumé at the foot of At a Glance */
+.glance__cv {
+  display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 12px 18px 12px 12px; border-radius: 999px;
+  border: 1px solid rgba(242, 193, 78, .5); background: rgba(242, 193, 78, .07); color: var(--ivory); text-decoration: none;
+  transition: background .3s var(--ease), border-color .3s var(--ease), transform .4s var(--ease-out);
+}
+.glance__cv:hover { background: rgba(242, 193, 78, .16); border-color: var(--gold); transform: translateY(-1px); }
+.glance__cv:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 3px; }
+.glance__cv-icon { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--gold); color: #0a1550; }
+.glance__cv-icon svg { width: 16px; height: 16px; }
+.glance__cv:hover .glance__cv-icon svg { animation: cvNudge .7s var(--ease-out); }
+@keyframes cvNudge { 40% { transform: translateY(2px); } }
+@media (prefers-reduced-motion: reduce) { .glance__cv:hover .glance__cv-icon svg { animation: none; } }
+.glance__cv-text { display: grid; gap: 1px; line-height: 1.25; }
+.glance__cv-text b { font-weight: 500; font-size: var(--t-sm); }
+.glance__cv-text small { font-size: var(--t-2xs); color: var(--ivory-3); letter-spacing: .04em; }
 .flag { display: inline-block; margin-left: .45em; line-height: 0; vertical-align: -.06em; }
 .flag + .flag { margin-left: .3em; }
 .flag svg { display: block; height: .8em; width: auto; border-radius: 2px; box-shadow: 0 0 0 1px rgba(243, 234, 219, .25); }
