@@ -5,7 +5,107 @@
 (function () {
   'use strict';
   var RJY = window.RJY, SITE = window.SITE, h = RJY.h, s = RJY.s, has = RJY.has;
-  var HUES = { gold: '#f2c14e', ember: '#f0a04a', foam: '#cfdcef', periwinkle: '#a7b3e0' };
+  var HUES = { gold: '#f2c14e', ember: '#f0a04a', foam: '#cfdcef', periwinkle: '#a7b3e0', teal: '#7fd0d4' };
+  var STATUS = { live: 'Live', 'in-progress': 'In progress' };
+  function consOf(w) { return SITE.constellations.filter(function (c) { return c.id === w.constellation; })[0] || {}; }
+  function hueOf(w) { return HUES[consOf(w).hue] || HUES.gold; }
+  function tagNames(w) {
+    return (w.tags || []).map(function (id) { var c = SITE.constellations.filter(function (x) { return x.id === id; })[0]; return c ? c.name : null; }).filter(Boolean);
+  }
+
+  /* ---------- Featured projects: one big star per website ----------
+     Each star has its own way of answering the pointer (`glyph`): the sun sends out rays, the ripple
+     spreads rings, the orbit sets a small moon circling. Selecting one flies through the star into its
+     case study (a circle of the project's colour grows from the star, then the chapter opens). */
+  function featuredStar(w, color) {
+    var g = w.glyph || 'sun', id = 'fs-' + w.id;
+    var svg = s('svg', { class: 'fstar fstar--' + g, viewBox: '-60 -60 120 120', 'aria-hidden': 'true' });
+    svg.appendChild(s('defs', null, s('radialGradient', { id: id },
+      s('stop', { offset: '0', 'stop-color': '#fff8e6', 'stop-opacity': '1' }),
+      s('stop', { offset: '.25', 'stop-color': color, 'stop-opacity': '.55' }),
+      s('stop', { offset: '1', 'stop-color': color, 'stop-opacity': '0' }))));
+    svg.appendChild(s('circle', { class: 'fstar__halo', r: 54, fill: 'url(#' + id + ')' }));
+    var fx = s('g', { class: 'fstar__fx' });
+    if (g === 'sun') {
+      for (var i = 0; i < 12; i++) {
+        var a = i * 30, L = i % 2 ? 30 : 40;
+        fx.appendChild(s('line', { class: 'ray', x1: 0, y1: -14, x2: 0, y2: -L, transform: 'rotate(' + a + ')', stroke: color }));
+      }
+    } else if (g === 'ripple') {
+      [0, 1, 2].forEach(function (i) { fx.appendChild(s('circle', { class: 'ring ring-' + i, r: 14, stroke: color })); });
+    } else {
+      fx.appendChild(s('circle', { class: 'orbit', r: 30, stroke: color }));
+      fx.appendChild(s('g', { class: 'moon-arm' }, s('circle', { class: 'moon', cx: 30, cy: 0, r: 3.2, fill: '#fff4d0' })));
+    }
+    svg.appendChild(fx);
+    // the star itself: a four-point spark over a core
+    svg.appendChild(s('path', { class: 'fstar__spark', d: 'M0 -22 L4 -4 L22 0 L4 4 L0 22 L-4 4 L-22 0 L-4 -4 Z', fill: '#fff8e6' }));
+    svg.appendChild(s('circle', { class: 'fstar__core', r: 5.5, fill: '#fff' }));
+    return svg;
+  }
+
+  function featuredCover(w, hue) {
+    var box = h('div', { class: 'feat__cover' + (w.cover ? '' : ' is-blank') });
+    if (w.cover) {
+      box.appendChild(RJY.picture(w.cover, { sizes: '(max-width: 760px) 92vw, 400px', alt: w.title + ' — the homepage' }));
+    } else {
+      // a canvas still being painted: a few strokes of the constellation's colour on the night
+      var pig = RJY.PIGMENTS[hue] ? hue : 'gold';
+      box.appendChild(h('span', { class: 'feat__strokes', 'aria-hidden': 'true' },
+        h('span', { html: RJY.brush(220, 26, { pigment: pig, seed: 3.3 + w.id.length, dir: 'h', dry: 0.35, texture: 0.8 }) }),
+        h('span', { html: RJY.brush(150, 22, { pigment: pig, seed: 9.1 + w.id.length, dir: 'h', dry: 0.4, texture: 0.8 }) }),
+        h('span', { html: RJY.brush(90, 18, { pigment: 'moon', seed: 5.7 + w.id.length, dir: 'h', dry: 0.5, texture: 0.8 }) })));
+      box.appendChild(h('span', { class: 'feat__blank', text: 'Still painting…' }));
+    }
+    return box;
+  }
+
+  // Fly through the star into the case study: a disc of the project's colour grows from the star
+  // until it fills the window, the chapter opens underneath, and the disc fades away.
+  function flyInto(fromEl, color, go) {
+    if (RJY.reducedMotion || !fromEl || !fromEl.getBoundingClientRect) { go(); return; }
+    var r = fromEl.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    var R = Math.hypot(Math.max(cx, window.innerWidth - cx), Math.max(cy, window.innerHeight - cy));
+    var disc = h('div', { class: 'portal-disc', 'aria-hidden': 'true' });
+    disc.style.left = cx + 'px'; disc.style.top = cy + 'px';
+    disc.style.setProperty('--c', color); disc.style.setProperty('--R', (R * 2.2) + 'px');
+    document.body.appendChild(disc);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { disc.classList.add('is-grown'); }); });
+    setTimeout(function () { go(); disc.classList.add('is-gone'); }, 520);
+    setTimeout(function () { disc.remove(); }, 1400);
+  }
+
+  function renderFeatured(root) {
+    var items = SITE.work.filter(function (w) { return w.featured; });
+    if (!items.length) return;
+    var wrap = h('div', { class: 'featured reveal' },
+      h('div', { class: 'featured__head' },
+        h('h3', { text: 'Featured projects' }),
+        h('p', { class: 'featured__lede', text: 'The websites: each one its own world. Point at a star to wake it; select it to step inside.' })));
+    var row = h('ul', { class: 'feat-row', role: 'list' }, items.map(function (w) {
+      var cons = consOf(w), color = hueOf(w), live = w.status !== 'in-progress';
+      var star = featuredStar(w, color);
+      var card = h('a', { class: 'feat' + (live ? ' is-live' : ' is-wip'), href: '#projects/' + w.id, 'aria-label': w.title + (live ? '' : ' (in progress)') + ' — open the case study' },
+        h('span', { class: 'feat__star' }, star),
+        featuredCover(w, cons.hue),
+        h('span', { class: 'feat__body' },
+          h('span', { class: 'feat__kicker' },
+            h('span', { class: 'feat__status', text: STATUS[w.status] || STATUS.live }),
+            h('span', { class: 'feat__tags', text: [cons.name].concat(tagNames(w)).join(' · ') })),
+          h('span', { class: 'feat__title', text: w.title }),
+          has(w.tagline) ? h('span', { class: 'feat__tagline', text: w.tagline }) : null,
+          h('span', { class: 'feat__go', text: live ? 'Read the case study →' : 'See what’s coming →' })));
+      card.style.setProperty('--hue', color);
+      card.addEventListener('click', function (e) {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button > 0) return;
+        e.preventDefault();
+        flyInto(star, color, function () { RJY.route.go('#projects/' + w.id); });
+      });
+      return h('li', null, card);
+    }));
+    wrap.appendChild(row);
+    root.appendChild(wrap);
+  }
 
   // Minimum spanning tree gives a natural, uncluttered constellation shape.
   function mst(pts) {
@@ -78,7 +178,8 @@
     });
     pts.forEach(function (p) {
       var w = p.w, r = 4 + 3 * (w.magnitude || 0.8);
-      var g = s('g', { class: 'wstar', tabindex: '0', role: 'button', 'aria-label': w.title + (w.when ? ', ' + w.when : '') + ' — open case study', 'data-id': w.id });
+      var wip = w.status === 'in-progress';
+      var g = s('g', { class: 'wstar' + (wip ? ' is-wip' : ''), tabindex: '0', role: 'button', 'aria-label': w.title + (w.when ? ', ' + w.when : '') + (wip ? ' (in progress)' : '') + ' — open case study', 'data-id': w.id });
       g.appendChild(s('circle', { class: 'halo', cx: p.x, cy: p.y, r: r * 6, fill: 'url(#' + gid + ')' }));
       g.appendChild(s('circle', { class: 'ring', cx: p.x, cy: p.y, r: r + 7 }));
       g.appendChild(s('circle', { class: 'core', cx: p.x, cy: p.y, r: r }));
@@ -106,7 +207,22 @@
     return svg;
   }
 
+  /* The homepage: the featured websites as three small stars under the calls to action. */
+  RJY.renderHeroFeatured = function (root) {
+    var items = SITE.work.filter(function (w) { return w.featured; });
+    if (!items.length) return;
+    root.appendChild(h('span', { class: 'hero__featured-label', text: 'Things I’ve built' }));
+    items.forEach(function (w) {
+      var live = w.status !== 'in-progress';
+      var a = h('a', { class: 'hstar' + (live ? '' : ' is-wip'), href: '#projects/' + w.id, 'aria-label': w.title + (live ? '' : ' (in progress)') + ' — open the case study', html: RJY.starIcon() },
+        h('span', { text: w.short || w.title }), live ? null : h('small', { text: 'soon' }));
+      a.style.setProperty('--hue', hueOf(w));
+      root.appendChild(a);
+    });
+  };
+
   RJY.renderWork = function (root) {
+    renderFeatured(root);
     var sky = h('div', { class: 'sky' });
     var boxes = [];
     SITE.constellations.forEach(function (c, ci) {
@@ -160,7 +276,7 @@
           return h('li', null, h('button', { type: 'button', class: 'ix-row', onclick: function () { RJY.route.go('#projects/' + w.id); } },
             h('span', { class: 'ix-num', 'aria-hidden': 'true', text: (n < 10 ? '0' : '') + n }),
             h('span', { class: 'ix-title' }, paint, text),
-            h('span', { class: 'ix-when', text: w.when || '' }),
+            h('span', { class: 'ix-when' }, w.status === 'in-progress' ? h('span', { class: 'wip', text: 'In progress' }) : null, w.when || ''),
             h('span', { class: 'ix-go', 'aria-hidden': 'true', text: '→' })));
         })));
     }).filter(Boolean);
@@ -221,13 +337,23 @@
         add('Images', w.images, function (v) {
           return h('div', { class: 'chapter__images' }, v.map(function (im) { return h('figure', null, h('img', { src: im.src, alt: im.alt || '', loading: 'lazy' }), has(im.caption) ? h('figcaption', { text: im.caption }) : null); }));
         }, 'screenshots, charts or slides — images');
-        add('Links', w.links, function (v) {
+        add('Links', w.featured ? [] : w.links, function (v) {
           return h('div', { class: 'btn-row' }, v.map(function (l) { return h('a', { class: 'btn', href: l.url, target: '_blank', rel: 'noopener', text: l.label }); }));
         }, 'a live demo, repository or deck — links');
         var prev = all[(i - 1 + all.length) % all.length], next = all[(i + 1) % all.length];
-        body.appendChild(h('p', { class: 'chapter__eyebrow', text: [cons.name, w.when].filter(has).join(', ') }));
+        var wip = w.status === 'in-progress', tags = tagNames(w);
+        body.appendChild(h('p', { class: 'chapter__eyebrow' },
+          wip ? h('span', { class: 'wip', text: 'In progress' }) : null,
+          [cons.name].concat(tags).join(' · ') + (has(w.when) ? ', ' + w.when : '')));
         body.appendChild(h('h2', { class: 'chapter__title', text: w.title }));
-        body.appendChild(h('p', { class: 'chapter__meta', text: [w.org].filter(has).join('') }));
+        body.appendChild(h('p', { class: 'chapter__meta' }, has(w.tagline) ? h('span', { class: 'chapter__tagline', text: w.tagline }) : null, [w.org].filter(has).join('')));
+        if (w.featured) {
+          var top = h('div', { class: 'chapter__actions' });
+          if (has(w.links)) top.appendChild(h('div', { class: 'btn-row' }, w.links.map(function (l, k) { return h('a', { class: 'btn' + (k === 0 ? ' btn--primary' : ''), href: l.url, target: '_blank', rel: 'noopener', text: l.label }); })));
+          else if (wip) top.appendChild(h('p', { class: 'chapter__soon', text: 'Still in the making — the link will appear here when it is ready.' }));
+          if (w.cover) top.appendChild(h('figure', { class: 'chapter__cover' }, RJY.picture(w.cover, { sizes: '(max-width: 1100px) 92vw, 1040px', alt: w.title + ' — the homepage', full: true })));
+          body.appendChild(top);
+        }
         body.appendChild(grid);
         var c = RJY.connections(w.related); if (c) body.appendChild(c);
         body.appendChild(h('div', { class: 'jd__nav', style: { marginTop: '48px' } },

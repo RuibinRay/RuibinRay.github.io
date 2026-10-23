@@ -16,6 +16,7 @@
   render('offclock', RJY.renderOffclock);
   render('journey', RJY.renderJourney);
   render('work', RJY.renderWork);
+  render('hero-featured', RJY.renderHeroFeatured);
   render('palette', RJY.renderPalette);
   render('palette-aux', RJY.renderPaletteAux);
   render('certificates', RJY.renderCertificates);
@@ -308,7 +309,7 @@
       var rects = Array.prototype.map.call(document.querySelectorAll('.hero__name .line > span'), function (e) {
         var t = e.getBoundingClientRect(), l = e.parentNode.getBoundingClientRect();
         return { left: t.left, right: t.right, top: l.top, bottom: l.bottom };
-      }).concat(Array.prototype.map.call(document.querySelectorAll('.hero__tagline, .hero__intro, .cta, .hero__cue'), function (e) { return e.getBoundingClientRect(); }));
+      }).concat(Array.prototype.map.call(document.querySelectorAll('.hero__tagline, .hero__intro, .cta, .hero__featured, .hero__cue'), function (e) { return e.getBoundingClientRect(); }));
       var w = vw(), hh = vh(), focal = RJY.Painting.focalFor(w, hh), m = RJY.Painting.viewMap(w, hh, focal, RJY.Painting.heroView(w, hh));
       var navH = nav ? nav.offsetHeight : 76, scrollY = window.pageYOffset;
       this.els.forEach(function (a) {

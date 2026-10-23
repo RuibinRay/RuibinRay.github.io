@@ -15,6 +15,14 @@
  *   related     connected stars: 'w:<project>', 'j:<journey entry>', 'c:<country code>', 's:<skill>'
  * `short` = label drawn next to the star;  `star` = its position in the constellation drawing (0–1 each way);
  * `magnitude` = brightness (0.6–1).
+ *
+ * Featured projects (the websites) carry a few more fields:
+ *   featured    true — shown in "Featured projects" at the top of the section and on the homepage
+ *   status      'live' or 'in-progress' (an "In progress" badge, no live link until it is ready)
+ *   tagline     one line under the title on the card
+ *   tags        other constellations the work belongs to as well, e.g. ['finance', 'analytics']
+ *   cover       { src, w, h } — a screenshot of the site (assets/media/work/), used on the card and the case study
+ *   glyph       how its star behaves when pointed at: 'sun' (rays), 'ripple' (rings), 'orbit' (a small moon)
  */
 window.SITE = window.SITE || {};
 
@@ -22,10 +30,78 @@ SITE.constellations = [
   { id: 'storage', name: 'Long-duration storage', note: 'Overseas business development for a vanadium flow-battery company, summer 2026', hue: 'gold' },
   { id: 'finance', name: 'Finance', note: 'Valuation, accounting and risk', hue: 'ember' },
   { id: 'analytics', name: 'Analytics & AI', note: 'Data, machine learning and automation', hue: 'foam' },
-  { id: 'strategy', name: 'Strategy & consulting', note: 'Markets, customers and operations', hue: 'periwinkle' }
+  { id: 'strategy', name: 'Strategy & consulting', note: 'Markets, customers and operations', hue: 'periwinkle' },
+  { id: 'digital', name: 'Digital Creations', note: 'Websites and interactive worlds I build myself', hue: 'teal' }
 ];
 
 SITE.work = [
+  // ── Digital Creations (websites) ──────────────────────────────────────────────────────────────
+  {
+    id: 'sunflower-intelligence', short: 'Sunflower Intelligence', constellation: 'digital', star: [0.22, 0.42], magnitude: 1,
+    featured: true, status: 'live', glyph: 'sun', tags: ['finance', 'analytics'],
+    title: 'Sunflower Intelligence',
+    tagline: 'Finance, analytics and marketing tools inside a living sunflower painting',
+    when: 'Oct 2026', org: 'Personal project',
+    cover: { src: 'assets/media/work/sunflower-intelligence/home.webp', w: 2048, h: 1280 },
+    context: 'A website of working finance, business analytics and marketing tools, set inside an animated sunflower painting after Van Gogh. The homepage is the painting: six flowers open six rooms, and every tool runs in the visitor’s browser, so uploaded data never leaves their device.',
+    objective: 'Put working finance, business analytics and marketing tools in one place, for anyone to use, and give people a place to learn them.',
+    role: 'Designed and built the whole site: the WebGL painting, the tools, the course platform and the content.',
+    approach: [
+      'Finance: cost of capital (CAPM, WACC) feeding a DCF with sensitivity tables; NPV, IRR, MIRR, payback and capital rationing for up to three projects; stock analysis with CAPM beta, Sharpe, drawdown and the efficient frontier; Value at Risk and Expected Shortfall three ways with Kupiec and Christoffersen backtests; bonds and Black–Scholes–Merton options with Greeks',
+      'Business analytics: a data-quality audit, descriptive statistics, correlations and OLS with diagnostics; logistic regression, decision trees, k-nearest neighbours and random forests compared by 5-fold cross-validation; k-means, Ward clustering and PCA; Holt-Winters forecasting checked on a held-back season',
+      'Marketing: survey-based market segmentation and RFM customer value; a world map of market attractiveness built on World Bank data; price elasticity and the profit-maximising price; unit economics and A/B tests with a sample-size planner',
+      'Learn: a free course platform in three schools (finance and accounting, business analytics, marketing), with three complete courses of 32 lessons, labs, a glossary, a formula library and spaced review; an adaptive skills check places visitors and tracks mastery with Bayesian knowledge tracing',
+      'How I build the models: the six-stage model life cycle, and an overfitting lab that shows why data is held back',
+      'The painting: one WebGL shader moves the paint along its own brushstrokes and walks a raking light across the impasto; each flower is a doorway that dives into its room. Slower devices step down to a lighter shader or a still painting; reduced motion gets a calm version'
+    ],
+    tools: ['JavaScript (ES modules)', 'WebGL (GLSL)', 'HTML & CSS', 'SVG charts', 'Web Workers', 'GitHub Pages', 'Python & Node.js (asset and content pipelines)', 'SciPy & statsmodels (tests)'],
+    insights: [],
+    results: [
+      'Six rooms: Finance, Business analytics, Marketing, How I build the models, Contact and Learn',
+      'Every result updates as you type, and nothing a visitor pastes or uploads leaves their browser',
+      'A course platform with 3 complete courses, 32 lessons, 340 glossary terms and 121 formulas; 30 more courses planned',
+      'Statistics checked against SciPy and statsmodels'
+    ],
+    images: [
+      { src: 'assets/media/work/sunflower-intelligence/finance.webp', w: 2048, h: 1280, alt: 'The Finance room: five pages from valuation to bonds and options', caption: 'The Finance room: valuation, investment decisions, stock analysis, risk management, bonds and options' },
+      { src: 'assets/media/work/sunflower-intelligence/analytics.webp', w: 2048, h: 1280, alt: 'The Business analytics room: explore, supervised and unsupervised learning, forecasting', caption: 'Business analytics: explore a table, compare four machine-learning models, cluster, forecast' },
+      { src: 'assets/media/work/sunflower-intelligence/marketing.webp', w: 2048, h: 1280, alt: 'The Marketing room: segmentation, market map, pricing, growth and experiments', caption: 'Marketing: segmentation, a world market map, pricing, growth and experiments' },
+      { src: 'assets/media/work/sunflower-intelligence/learn.webp', w: 2048, h: 1280, alt: 'The Learn room: three schools of free courses', caption: 'Learn: free courses in three schools, with labs, a glossary and spaced review' }
+    ],
+    links: [
+      { label: 'Open the site', url: 'https://ruibinray.github.io/sunflower-intelligence/' },
+      { label: 'View the code', url: 'https://github.com/RuibinRay/sunflower-intelligence' }
+    ],
+    related: ['s:finance', 's:analytics', 's:data-science', 's:marketing', 's:ai', 'w:ml-cases', 'w:ledger-lift']
+  },
+  {
+    id: 'pura-vida', short: 'Pura Vida', constellation: 'digital', star: [0.54, 0.72], magnitude: 0.9,
+    featured: true, status: 'in-progress', glyph: 'ripple',
+    title: 'Costa Rica — Pura Vida: The Living Country',
+    tagline: 'An immersive 3D journey through the wildlife, plants, provinces and culture of Costa Rica',
+    when: '2026 — in progress', org: 'Personal project',
+    cover: null,
+    context: 'An immersive 3D educational experience exploring Costa Rica: its wildlife, plants, seven provinces, history, culture and biodiversity.',
+    objective: '', role: '',
+    approach: [], tools: [], insights: [], results: [],
+    images: [], links: [],
+    related: ['c:CRI', 's:ai']
+  },
+  {
+    id: '545-days', short: '545 Days', constellation: 'digital', star: [0.82, 0.30], magnitude: 0.9,
+    featured: true, status: 'in-progress', glyph: 'orbit',
+    title: '545 Days',
+    tagline: 'A civilization sandbox: create a world, shape its societies, and see which of 30 endings it reaches',
+    when: '2026 — in progress', org: 'Personal project',
+    cover: null,
+    context: 'An AI-inspired civilization simulator in which players create worlds, influence societies and witness unpredictable events over a main run of 545 in-game days, leading to 30 possible endings.',
+    objective: '', role: '',
+    approach: ['Sandbox mode: a free world with no fixed goal', 'Story mode: the 545-day run with its 30 endings', 'Continuation mode: keep a world going after its ending'],
+    tools: [], insights: [], results: [],
+    images: [], links: [],
+    related: ['s:ai', 's:strategy']
+  },
+
   // ── Long-duration storage (HJAT internship, Shenyang, Jun – Aug 2026) ──────────────────────
   {
     id: 'market-maps', short: 'Market maps', constellation: 'storage', star: [0.18, 0.62], magnitude: 1,

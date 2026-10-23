@@ -182,11 +182,11 @@ SITE.certifications = [
   { title: 'Introduction to SQL', issuer: 'DataCamp · 2 hours', date: 'May 8, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-sql.webp', w: 2048, h: 1182, url: '' },
   { title: 'Intermediate Python', issuer: 'DataCamp · 4 hours', date: 'Apr 29, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intermediate-python.webp', w: 2048, h: 1182, url: '' },
   { title: 'Introduction to Python', issuer: 'DataCamp · 4 hours', date: 'Mar 4, 2024', group: 'DataCamp', img: 'assets/media/certificates/datacamp-intro-python.webp', w: 2048, h: 1182, url: '' },
+  { title: 'Tech on the Go: No-Code for Coders', issuer: 'LinkedIn Learning · 24 minutes', date: 'Feb 10, 2024', group: 'Other', img: 'assets/media/certificates/linkedin-no-code-for-coders.webp', w: 2048, h: 1583, url: '' },
   { title: 'Voices for Change', issuer: 'Get Inclusive', date: 'Sep 5, 2023', group: 'Other', img: 'assets/media/certificates/voices-for-change.webp', w: 2048, h: 1583, url: 'https://app.getinclusive.com/verify/637879340-69' },
   { title: 'Introduction to Financial Accounting', issuer: 'University of Pennsylvania', date: '2026', group: 'Finance', img: '', url: '' },
   { title: 'Foundations of Digital Marketing & E-commerce', issuer: 'Google', date: '2025', group: 'Other', img: '', url: '' },
   { title: 'Accounting Job Simulation', issuer: 'Koch Industries via Forage', date: '2024', group: 'Finance', img: '', url: '' },
-  { title: 'Tech on the Go: No-Code for Coders', issuer: 'LinkedIn Learning · 24 minutes', date: 'Feb 10, 2024', group: 'Other', img: '', url: '' },
   { title: 'International Baccalaureate Diploma', issuer: 'Lincoln School, Costa Rica', date: '2023', group: 'Other', img: '', url: '' },
   { title: 'HSK Level 7–9', issuer: 'Chinese Proficiency Test', date: '2022', group: 'Other', img: '', url: '' }
 ];
