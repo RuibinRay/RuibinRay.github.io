@@ -334,9 +334,37 @@
         add('Tools', w.tools, function (v) { return h('div', { class: 'chapter__tools' }, v.map(function (t) { return h('span', { text: t }); })); }, 'tools you used — tools');
         add('Insights', w.insights, bullets, 'what you found — insights');
         add('Results & deliverables', w.results, bullets, 'documented results — results (no estimates)');
+        // researched context: facts about the subject (not about my work), each with its sources
+        add('Background', w.background, function (v) {
+          return h('div', { class: 'chapter__bg' },
+            h('p', { class: 'chapter__bg-note', text: 'Context I researched for this page, with the sources.' }),
+            v.map(function (b) {
+              var src = [];
+              (b.sources || []).forEach(function (s, k) { if (k) src.push(' · '); src.push(h('a', { href: s.url, target: '_blank', rel: 'noopener', text: s.label })); });
+              return h('p', null, b.text, ' ', src.length ? h('span', { class: 'chapter__src' }, '(', src, ')') : null);
+            }));
+        }, 'researched context with sources — background');
         add('Images', w.images, function (v) {
-          return h('div', { class: 'chapter__images' }, v.map(function (im) { return h('figure', null, h('img', { src: im.src, alt: im.alt || '', loading: 'lazy' }), has(im.caption) ? h('figcaption', { text: im.caption }) : null); }));
+          var pics = v.map(function (im) { return Object.assign({ place: w.title }, im); });
+          return h('div', { class: 'chapter__images' }, pics.map(function (im, k) {
+            return h('figure', null,
+              h('button', { type: 'button', class: 'chapter__shot', 'aria-label': 'Open image: ' + (im.caption || im.alt || w.title), onclick: function () { RJY.lightbox(im, pics, k); } },
+                RJY.picture(im, { sizes: '(max-width: 1100px) 92vw, 640px', alt: '' })),
+              has(im.caption) ? h('figcaption', { text: im.caption }) : null);
+          }));
         }, 'screenshots, charts or slides — images');
+        // documents: open the public ones; the rest can be requested from me by email
+        var mail = SITE.links && SITE.links.email;
+        function ask(subject) { return 'mailto:' + mail + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent('Hi Ray,\n\nI saw “' + w.title + '” on your website and would like to read ' + (subject.indexOf('Request: ') === 0 ? '“' + subject.slice(9) + '”' : 'more about it') + '.\n\n'); }
+        if (has(w.documents) || mail) grid.appendChild(h('h3', { text: 'Related documents' }));
+        if (has(w.documents) || mail) grid.appendChild(h('div', null, h('ul', { class: 'docs' }, (w.documents || []).map(function (d) {
+          var open = has(d.url);
+          return h('li', { class: 'doc' + (open ? '' : ' is-request') },
+            h('span', { class: 'doc__kind', text: d.kind || 'Document' }),
+            h('span', { class: 'doc__text' }, h('b', { text: d.title }), has(d.note) ? h('small', { text: d.note }) : null),
+            open ? h('a', { class: 'doc__go', href: d.url, target: '_blank', rel: 'noopener', 'aria-label': 'Open ' + d.title + ' (new tab)', text: 'Open' })
+                 : (mail ? h('a', { class: 'doc__go', href: ask('Request: ' + d.title), 'aria-label': 'Ask Ray for ' + d.title + ' by email', text: 'Ask for it' }) : null));
+        })), mail ? h('p', { class: 'docs__ask' }, 'Want to see more of the work behind this? ', h('a', { class: 'link', href: ask('About ' + w.title), text: 'Ask me for the documents' }), '.') : null));
         add('Links', w.featured ? [] : w.links, function (v) {
           return h('div', { class: 'btn-row' }, v.map(function (l) { return h('a', { class: 'btn', href: l.url, target: '_blank', rel: 'noopener', text: l.label }); }));
         }, 'a live demo, repository or deck — links');

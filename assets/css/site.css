@@ -766,6 +766,31 @@ p.about__closing {
 .chapter__images figure { margin: 0; }
 .chapter__images img { width: 100%; border-radius: 2px; }
 .chapter__images figcaption { font-size: var(--t-xs); color: var(--ivory-3); margin-top: 6px; }
+.chapter__shot { display: block; width: 100%; padding: 0; border: 0; background: none; cursor: zoom-in; border-radius: 3px; overflow: hidden; }
+.chapter__shot img { display: block; width: 100%; height: auto; transition: transform .7s var(--ease-out); }
+.chapter__shot:hover img, .chapter__shot:focus-visible img { transform: scale(1.02); }
+.chapter__shot:focus-visible { outline: 1.5px solid var(--gold); outline-offset: 3px; }
+/* researched background, with its sources */
+.chapter__bg { display: grid; gap: 12px; }
+.chapter__bg > p { font-size: var(--t-sm); color: var(--ivory-2, inherit); line-height: 1.6; }
+.chapter__bg > p.chapter__bg-note { font-size: var(--t-xs); color: var(--ivory-3); }
+.chapter__bg-note { font-size: var(--t-xs); color: var(--ivory-3); font-style: italic; }
+.chapter__src { font-size: var(--t-xs); color: var(--ivory-3); }
+.chapter__src a { color: var(--ivory-3); text-decoration: underline; text-decoration-color: rgba(243, 234, 219, .3); text-underline-offset: 2px; }
+.chapter__src a:hover { color: var(--gold); }
+/* related documents */
+.docs { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; }
+.docs:empty { display: none; }
+.doc { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 14px; padding: 10px 12px; border: 1px solid var(--line-faint); border-radius: 8px; background: rgba(var(--veil-rgb), .35); }
+.doc__kind { padding: 3px 8px; border-radius: 4px; background: rgba(242, 193, 78, .12); color: var(--gold); font-size: var(--t-2xs); letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+.doc__text { display: grid; gap: 2px; }
+.doc__text b { font-weight: 500; color: var(--ivory); font-size: var(--t-sm); }
+.doc__text small { color: var(--ivory-3); font-size: var(--t-xs); }
+.doc__go { padding: 6px 14px; border-radius: 999px; border: 1px solid var(--line); color: var(--ivory); font-size: var(--t-xs); text-decoration: none; white-space: nowrap; }
+.doc__go:hover { background: rgba(242, 193, 78, .14); }
+.doc.is-request .doc__go { border-style: dashed; }
+.docs__ask { font-size: var(--t-sm); color: var(--ivory-3); margin: 0; }
+@media (max-width: 560px) { .doc { grid-template-columns: minmax(0, 1fr) auto; } .doc__kind { grid-column: 1 / -1; justify-self: start; } }
 @media (max-width: 760px) { .chapter__grid { grid-template-columns: 1fr; gap: 10px; } .chapter__grid > div { margin-bottom: 18px; } }
 
 /* 10b. Constellation — how it all connects -------------------------------- */

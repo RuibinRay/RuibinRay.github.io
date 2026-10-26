@@ -42,7 +42,7 @@ Three rules the site follows:
 - [ ] **Your teaching at CCECC Costa Rica**: the photos are on the CCECC entry in `data/journey.js`; still to add in words: what you taught, to whom and when.
 - [ ] **The "Tech on the Go: No-Code for Coders" certificate PDF**, so it can show as an image like the others (it's listed as text for now).
 - [ ] **A portrait**: `assets/img/ray.jpg`, then `about.photo` in `data/site.js`.
-- [ ] **Case-study details**: objective, approach, insights, results, images and links for each project in `data/work.js`.
+- [ ] **Case-study details and documents**: objective, approach, insights, results, images and links for each project in `data/work.js`, and any decks, reports or models you're happy to publish (`documents`, files in `assets/docs/`). Researched background is already on most projects.
 - [ ] **Evidence for the Hult Future Leaders Challenge**: `awards[0].evidence` in `data/site.js`.
 - [ ] **Your wishlist and travel stories**: see *Updating the atlas* below.
 - [ ] **Credit for the painting**: `meta.paintingCredit` in `data/site.js`.
@@ -68,18 +68,27 @@ Copy one of the entries in `data/work.js` and change it:
 {
   id: 'my-new-project',            // lowercase, no spaces — used in links like #projects/my-new-project
   short: 'New project',            // label next to the star
-  constellation: 'finance',        // storage | finance | analytics | strategy (or add one to SITE.constellations)
+  constellation: 'finance',        // storage | finance | analytics | strategy | digital (or add one to SITE.constellations)
   star: [0.5, 0.4],                // where the star sits in its constellation (0–1 across, 0–1 down)
   magnitude: 0.9,                  // brightness, 0.6–1
   title: 'The full title',
   when: 'Jan – Mar 2027', org: 'Who it was for',
   context: '', objective: '', role: '',
   approach: [], tools: [], insights: [], results: [],
-  images: [ { src: 'assets/img/work/chart.png', alt: 'What the chart shows', caption: '' } ],
+  images: [ { src: 'assets/media/work/my-new-project/chart.webp', w: 2048, h: 1280, alt: 'What the chart shows', caption: '' } ],
   links: [ { label: 'Read the deck', url: 'https://…' } ],
+  background: [                    // context researched from public sources — always with its sources
+    { text: 'What the market or company looked like.', sources: [ { label: 'Publisher', url: 'https://…' } ] }
+  ],
+  documents: [                     // related documents
+    { title: 'The deck', kind: 'Deck', url: 'assets/docs/deck.pdf', note: 'PDF, 12 slides' },  // with a url: opens it
+    { title: 'The model', kind: 'Model', note: 'Shared on request' }                         // no url: an "Ask for it" email to you
+  ],
   related: ['s:finance', 'j:some-entry']
 }
 ```
+
+Every case study ends with *Related documents* and a line inviting visitors to email you for the documents behind the work. A document with a `url` opens directly (put the file in `assets/docs/`); one without becomes an *Ask for it* link that opens the visitor's email app with a request addressed to you — nothing is sent from the site itself. *Background* is for context you looked up (the market, the company, the method), shown with its sources; keep your own results in `results`.
 
 ### Adding a journey entry
 
