@@ -165,6 +165,11 @@ SITE.awards = [
 // assets/media/certificates/); url: where it can be verified. Without an image a certificate is
 // listed in text under the gallery. group: the filter it appears under.
 SITE.certifications = [
+  { title: 'Google AI Professional Certificate (8 courses)', issuer: 'Google, on Coursera', date: 'Oct 26, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-professional-certificate.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/professional-cert/HZZP629M4TO8' },
+  { title: 'AI for App Deployment', issuer: 'Google, on Coursera', date: 'Oct 26, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-app-deployment.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/E47LJJHTLEA2' },
+  { title: 'AI for App Building', issuer: 'Google, on Coursera', date: 'Oct 26, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-app-building.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/RWZ9L738JVQT' },
+  { title: 'AI for Data Analysis', issuer: 'Google, on Coursera', date: 'Oct 26, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-data-analysis.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/NYIGT2U98ECB' },
+  { title: 'Relational Database Design', issuer: 'University of Colorado Boulder, on Coursera', date: 'Oct 26, 2026', group: 'Other', img: 'assets/media/certificates/cu-boulder-relational-database-design.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/8Y47V8DAFSX9' },
   { title: 'Certificate of Achievement: Overseas Sales internship', issuer: 'HJAT (恒久安泰), Shenyang', date: 'Aug 2026', group: 'Internship', img: 'assets/media/journey/hjat/hjat-certificate.webp', w: 2048, h: 1502, url: '' },
   { title: 'AI for Content Creation', issuer: 'Google, on Coursera', date: 'Aug 13, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-content-creation.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/Y8SOP20X8PK4' },
   { title: 'AI for Writing and Communicating', issuer: 'Google, on Coursera', date: 'Aug 12, 2026', group: 'Google AI', img: 'assets/media/certificates/google-ai-writing-communicating.webp', w: 2048, h: 1583, url: 'https://coursera.org/verify/0I8ME0XMV00T' },
