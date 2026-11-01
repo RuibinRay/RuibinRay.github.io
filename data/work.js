@@ -27,7 +27,10 @@
  *   tagline     one line under the title on the card
  *   tags        other constellations the work belongs to as well, e.g. ['finance', 'analytics']
  *   cover       { src, w, h } — a screenshot of the site (assets/media/work/), used on the card and the case study
- *   glyph       how its star behaves when pointed at: 'sun' (rays), 'ripple' (rings), 'orbit' (a small moon)
+ *   glyph       how its star behaves when pointed at: 'sun' (rays), 'ripple' (rings), 'orbit' (a small moon),
+ *               'flow' (two electrolyte loops)
+ *   alsoIn      list of { constellation, star } — also draw the project in another constellation, at that
+ *               position, and list it there too (it keeps one case study and one number)
  */
 window.SITE = window.SITE || {};
 
@@ -125,6 +128,59 @@ SITE.work = [
       { title: 'Art style', kind: 'Design', url: 'https://github.com/RuibinRay/pura-vida/blob/main/docs/ART_STYLE.md', note: 'How the plates and postcards are drawn' }
     ],
     related: ['c:CRI', 's:ai', 's:data-science', 's:communication', 'w:sunflower-intelligence', 'w:mundo-bonito']
+  },
+  {
+    id: 'vrfb-info', short: 'VRFB explained', constellation: 'digital', star: [0.16, 0.84], magnitude: 0.9,
+    alsoIn: [{ constellation: 'storage', star: [0.08, 0.18] }],
+    featured: true, status: 'live', glyph: 'flow', tags: ['storage'],
+    title: 'VRFB — The Science of Flow Energy',
+    tagline: 'A scroll-driven 3D documentary on vanadium flow batteries, with calculators and cited sources',
+    when: 'Nov 2026', org: 'Personal project',
+    cover: { src: 'assets/media/work/vrfb-info/hero.webp', w: 2048, h: 1280 },
+    context: 'An educational website about vanadium redox flow batteries (VRFB), the technology I worked with at HJAT, in English, Spanish and Simplified Chinese. The homepage is a 3D documentary driven by scrolling: it zooms into a VRFB system, takes the stack apart layer by layer, dives into the electrode to show the chemistry, follows the electrolyte through the cell, rebuilds the stack, charges the tanks, and ends with the system between a solar farm and the grid.',
+    objective: 'Explain how a flow battery works, what it costs and where it is used, from beginner level to the equations, with every number tied to a cited source.',
+    role: 'Designed and built the whole site: the 3D models and scroll journey, the five pages, the calculators and the translations.',
+    approach: [
+      'The journey: ten chapters on one scroll-scrubbed timeline, so scrolling back replays everything in reverse; every component of the stack can be selected for its specification',
+      'Five pillar pages — chemistry, anatomy, engineering, economics and applications — each with a beginner and an advanced level',
+      'Four interactive tools: an open-circuit voltage explorer (Nernst equation), a stack, tank and pump sizing calculator, a VRFB vs. lithium-ion levelized cost of storage (LCOS) calculator, and a 24-hour solar-plus-storage dispatch simulator',
+      'Sourcing: 18 references, from the original 1986 all-vanadium cell paper to U.S. Department of Energy and Lazard cost assessments; cost inputs are shown as editable assumptions, not quotes',
+      'Three languages: the homepage translates in the browser, and the pillar pages are generated as static pages in each language from one template'
+    ],
+    tools: ['JavaScript (ES modules)', 'Three.js', 'GSAP ScrollTrigger', 'HTML & CSS', 'Python (page generator)', 'GitHub Pages'],
+    insights: [],
+    results: [
+      'Live in English, Spanish and Simplified Chinese',
+      'A 10-chapter 3D journey, 5 in-depth pages and 4 calculators',
+      '18 cited references; no build step, no backend and no trackers'
+    ],
+    background: [
+      { text: 'The all-vanadium redox flow cell was first reported in 1986 by Maria Skyllas-Kazacos and colleagues at the University of New South Wales. Because both sides use the same element, vanadium that crosses the membrane costs capacity that can be recovered by rebalancing, instead of permanently contaminating the other side.',
+        sources: [
+          { label: 'Journal of The Electrochemical Society, 1986', url: 'https://doi.org/10.1149/1.2108706' },
+          { label: 'Skyllas-Kazacos et al., 2011 review', url: 'https://doi.org/10.1149/1.3599565' }
+        ] },
+      { text: 'Because energy sits in the tanks and power in the stacks, the two can be sized separately; flow batteries offer long cycle and calendar life but are less commercially mature than lithium-ion.',
+        sources: [{ label: 'PNNL, Energy Storage Cost and Performance', url: 'https://www.pnnl.gov/projects/esgc-cost-performance/vanadium-redox-flow-battery' }] }
+    ],
+    images: [
+      { src: 'assets/media/work/vrfb-info/explode.webp', w: 2048, h: 1280, alt: 'The cell stack pulled apart in 3D: end plate, felt electrodes, membranes and bipolar plates side by side, with the chapter text “Eleven layers, one cell.”', caption: 'The stack taken apart: eleven layers make one cell' },
+      { src: 'assets/media/work/vrfb-info/micro.webp', w: 2048, h: 1280, alt: 'A microscopic cross-section of the cell: carbon fibres, vanadium ions and protons crossing the membrane', caption: 'Inside the electrode: four oxidation states of one metal' },
+      { src: 'assets/media/work/vrfb-info/system.webp', w: 2048, h: 1280, alt: 'The two electrolyte tanks changing colour as the battery charges, violet on one side and yellow on the other', caption: 'Charging: the electrolyte changes colour in each tank' },
+      { src: 'assets/media/work/vrfb-info/grid.webp', w: 2048, h: 1280, alt: 'The VRFB system set between a solar farm and the grid', caption: 'From the solar farm to the grid' },
+      { src: 'assets/media/work/vrfb-info/chemistry.webp', w: 2048, h: 1280, alt: 'The open-circuit voltage explorer: sliders for state of charge, temperature and acid concentration, and a voltage curve', caption: 'Chemistry: the open-circuit voltage explorer' },
+      { src: 'assets/media/work/vrfb-info/dispatch.webp', w: 2048, h: 1280, alt: 'The 24-hour dispatch simulator: solar output, load and battery charge and discharge over a day', caption: 'Applications: a 24-hour solar-plus-storage dispatch simulator' }
+    ],
+    links: [
+      { label: 'Open the site', url: 'https://ruibinray.github.io/VRFB-Info/' },
+      { label: 'View the code', url: 'https://github.com/RuibinRay/VRFB-Info' }
+    ],
+    documents: [
+      { title: 'Sources & citations', kind: 'Sources', url: 'https://ruibinray.github.io/VRFB-Info/pillars/references.html', note: 'All 18 references, with notes on specific numbers' },
+      { title: 'Economics: VRFB vs. lithium-ion LCOS', kind: 'Calculator', url: 'https://ruibinray.github.io/VRFB-Info/pillars/economics.html', note: 'Cost structure, the vanadium question and the calculator' },
+      { title: 'VRFB and LCOS study guide (24 pages, bilingual)', kind: 'Guide', note: 'Written at HJAT — I can share it where the company allows' }
+    ],
+    related: ['j:hjat', 'c:CHN', 's:intl-bd', 's:communication', 'w:lifecycle', 'w:market-maps', 'w:study-guides', 'w:pura-vida']
   },
   {
     id: '545-days', short: '545 Days', constellation: 'digital', star: [0.82, 0.30], magnitude: 0.9,

@@ -69,6 +69,7 @@ Copy one of the entries in `data/work.js` and change it:
   id: 'my-new-project',            // lowercase, no spaces — used in links like #projects/my-new-project
   short: 'New project',            // label next to the star
   constellation: 'finance',        // storage | finance | analytics | strategy | digital (or add one to SITE.constellations)
+  alsoIn: [ { constellation: 'storage', star: [0.1, 0.2] } ],   // optional: also drawn and listed in another constellation
   star: [0.5, 0.4],                // where the star sits in its constellation (0–1 across, 0–1 down)
   magnitude: 0.9,                  // brightness, 0.6–1
   title: 'The full title',

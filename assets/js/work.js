@@ -9,6 +9,18 @@
   var STATUS = { live: 'Live', 'in-progress': 'In progress' };
   function consOf(w) { return SITE.constellations.filter(function (c) { return c.id === w.constellation; })[0] || {}; }
   function hueOf(w) { return HUES[consOf(w).hue] || HUES.gold; }
+  // The projects drawn in a constellation: its own, plus any that belong elsewhere but are also shown
+  // here (`alsoIn: [{ constellation, star }]`) — the same project, with its own place in this drawing.
+  function membersOf(c) {
+    var own = [], also = [];
+    SITE.work.forEach(function (w) {
+      if (w.constellation === c.id) own.push(w);
+      else (w.alsoIn || []).forEach(function (a) {
+        if (a.constellation === c.id) { var e = Object.create(w); e.star = a.star || w.star; e.echo = true; also.push(e); }
+      });
+    });
+    return own.concat(also);
+  }
   function tagNames(w) {
     return (w.tags || []).map(function (id) { var c = SITE.constellations.filter(function (x) { return x.id === id; })[0]; return c ? c.name : null; }).filter(Boolean);
   }
@@ -33,6 +45,10 @@
       }
     } else if (g === 'ripple') {
       [0, 1, 2].forEach(function (i) { fx.appendChild(s('circle', { class: 'ring ring-' + i, r: 14, stroke: color })); });
+    } else if (g === 'flow') {
+      // a flow battery's two electrolyte loops: dashes running round either side of the cell
+      fx.appendChild(s('path', { class: 'loop loop-a', d: 'M-5 -15 C-44 -34 -44 34 -5 15', stroke: '#b9a3f0' }));
+      fx.appendChild(s('path', { class: 'loop loop-b', d: 'M5 -15 C44 -34 44 34 5 15', stroke: color }));
     } else {
       fx.appendChild(s('circle', { class: 'orbit', r: 30, stroke: color }));
       fx.appendChild(s('g', { class: 'moon-arm' }, s('circle', { class: 'moon', cx: 30, cy: 0, r: 3.2, fill: '#fff4d0' })));
@@ -207,7 +223,7 @@
     return svg;
   }
 
-  /* The homepage: the featured websites as three small stars under the calls to action. */
+  /* The homepage: the featured websites as small stars under the calls to action. */
   RJY.renderHeroFeatured = function (root) {
     var items = SITE.work.filter(function (w) { return w.featured; });
     if (!items.length) return;
@@ -226,7 +242,7 @@
     var sky = h('div', { class: 'sky' });
     var boxes = [];
     SITE.constellations.forEach(function (c, ci) {
-      var items = SITE.work.filter(function (w) { return w.constellation === c.id; });
+      var items = membersOf(c);
       if (!items.length) return;
       var wide = ci === 0;
       var box = h('div', { class: 'cons reveal', style: wide ? { gridColumn: '1 / -1' } : null },
@@ -259,9 +275,11 @@
 
     // All projects — every project in one list, grouped by constellation. Each title is written on a
     // brushstroke in its constellation's colour, painted at the title's real size (brush.js).
-    var n = 0, rows = [];
+    var n = 0, rows = [], numOf = {}, k = 0;
+    // each project keeps one number, its place in its own constellation, even where it is also listed
+    SITE.constellations.forEach(function (c) { SITE.work.forEach(function (w) { if (w.constellation === c.id) numOf[w.id] = ++k; }); });
     var groups = SITE.constellations.map(function (c) {
-      var items = SITE.work.filter(function (w) { return w.constellation === c.id; });
+      var items = membersOf(c);
       if (!items.length) return null;
       var pig = RJY.PIGMENTS[c.hue] ? c.hue : 'gold';
       return h('li', { class: 'ix-group' },
@@ -269,12 +287,13 @@
           h('span', { class: 'ix-group__dab', 'aria-hidden': 'true', html: RJY.brush(44, 16, { pigment: pig, seed: n + 4.1, dir: 'h', dry: 0.3, inset: { across: 2, start: 1, end: 1 } }) }),
           c.name,
           h('span', { class: 'ix-group__count', text: items.length + (items.length === 1 ? ' project' : ' projects') })),
-        h('ol', { class: 'ix-list', start: String(n + 1) }, items.map(function (w) {
+        h('ul', { class: 'ix-list' }, items.map(function (w) {
           n++;
+          var num = numOf[w.id] || n;
           var paint = h('span', { class: 'ix-paint', 'aria-hidden': 'true' }), text = h('span', { class: 'ix-text', text: w.title });
           rows.push({ paint: paint, text: text, pigment: pig, seed: n * 7.3 + 2, key: '' });
           return h('li', null, h('button', { type: 'button', class: 'ix-row', onclick: function () { RJY.route.go('#projects/' + w.id); } },
-            h('span', { class: 'ix-num', 'aria-hidden': 'true', text: (n < 10 ? '0' : '') + n }),
+            h('span', { class: 'ix-num', 'aria-hidden': 'true', text: (num < 10 ? '0' : '') + num }),
             h('span', { class: 'ix-title' }, paint, text),
             h('span', { class: 'ix-when' }, w.status === 'in-progress' ? h('span', { class: 'wip', text: 'In progress' }) : null, w.when || ''),
             h('span', { class: 'ix-go', 'aria-hidden': 'true', text: '→' })));
