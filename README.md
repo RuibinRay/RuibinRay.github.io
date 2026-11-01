@@ -290,7 +290,7 @@ site.webmanifest, robots.txt, sitemap.xml, .nojekyll
 
 ## Credits
 
-- Fonts: [Fraunces](https://github.com/undercasetype/Fraunces) and [Instrument Sans](https://github.com/Instrument/instrument-sans), SIL Open Font License (licences in `assets/fonts/`)
+- Fonts: [Fraunces](https://github.com/undercasetype/Fraunces) and [Instrument Sans](https://github.com/Instrument/instrument-sans), SIL Open Font License and the few Chinese characters from [Noto Serif SC](https://github.com/notofonts/noto-cjk), SIL Open Font License (licences in `assets/fonts/`). The arrows and Chinese characters are tiny subsets made by `tools/make_font_subsets.py`, so a Mac and a Windows PC draw the same glyphs; run it again after adding Chinese text (instructions at the top of the script).
 - Country borders: [Natural Earth](https://www.naturalearthdata.com/) (public domain) via [world-atlas](https://github.com/topojson/world-atlas); provinces/states and cities: Natural Earth 1:10m admin-1 and populated places (public domain)
 - Map code: [d3-geo, d3-zoom](https://d3js.org/) and [topojson-client](https://github.com/topojson/topojson-client), ISC licence (`assets/vendor/LICENSES.txt`)
 - Flags: [flag-icons](https://github.com/lipis/flag-icons), MIT licence

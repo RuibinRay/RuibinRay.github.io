@@ -581,9 +581,11 @@
   }
 
   /* ---------- 8. reveal on scroll ---------- */
+  // A block appears once its top edge is above the bottom tenth of the window. (A share of the block's own
+  // height, as before, kept tall blocks blank for long on short windows, e.g. a laptop at 150% scaling.)
   var rio = null;
   if ('IntersectionObserver' in window && !RJY.reducedMotion) {
-    rio = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); rio.unobserve(e.target); } }); }, { threshold: 0.12, rootMargin: '0px 0px -6% 0px' });
+    rio = new IntersectionObserver(function (es) { es.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add('is-in'); rio.unobserve(e.target); } }); }, { threshold: 0, rootMargin: '0px 0px -10% 0px' });
   }
   // also used for content drawn later (photos found after the page loaded)
   RJY.reveal = function (scope) {

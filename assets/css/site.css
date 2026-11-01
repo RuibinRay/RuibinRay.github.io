@@ -14,6 +14,10 @@
 @font-face { font-family: 'Instrument Sans'; src: url('../fonts/instrument-sans-400-italic.woff2') format('woff2'); font-weight: 400; font-style: italic; font-display: swap; }
 @font-face { font-family: 'Instrument Sans'; src: url('../fonts/instrument-sans-500.woff2') format('woff2'); font-weight: 500; font-display: swap; }
 @font-face { font-family: 'Instrument Sans'; src: url('../fonts/instrument-sans-600.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+/* Small supplements (tools/make_font_subsets.py) so a Mac and a Windows PC draw the same glyphs:
+   arrows (neither text font has them) and the few Chinese characters on the site (else Songti vs SimSun). */
+@font-face { font-family: 'RJY Arrows'; src: url('../fonts/rjy-arrows.woff2') format('woff2'); font-weight: 400 600; font-display: swap; unicode-range: U+2190-2199; }
+@font-face { font-family: 'Noto Serif SC Sub'; src: url('../fonts/noto-serif-sc-sub.woff2') format('woff2'); font-weight: 300 500; font-display: swap; }
 
 :root {
   /* sampled from the painting */
@@ -35,8 +39,8 @@
   --line-faint: rgba(243, 234, 219, 0.14);
   --veil-rgb: 5, 10, 46;
 
-  --serif: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
-  --sans: 'Instrument Sans', 'Helvetica Neue', 'Segoe UI', Arial, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+  --serif: 'Fraunces', 'RJY Arrows', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+  --sans: 'Instrument Sans', 'RJY Arrows', 'Helvetica Neue', 'Segoe UI', Arial, 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
 
   /* fluid type scale: each step grows smoothly from a 360px phone to a 1440px screen.
      Fraunces (serif) for the expressive headings, Instrument Sans for body text and details. */
@@ -63,7 +67,10 @@
 
 /* 2. Base & type ---------------------------------------------------------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px;
+  /* Windows (and Linux) scrollbars take up room and are drawn by the browser: tint them to the night sky.
+     A Mac's overlay scrollbars are unaffected. */
+  scrollbar-color: rgba(242, 193, 78, .4) #050a2e; }
 body {
   margin: 0;
   background: var(--abyss);
@@ -333,10 +340,10 @@ html.is-arriving main, html.is-arriving .footer, html.is-arriving .nav { transit
   mask: url('../img/dissolve.png') top / 100% 44vh no-repeat, linear-gradient(#000, #000) 0 43.5vh / 100% 100% no-repeat;
 }
 .sec__inner { max-width: 1180px; margin: 0 auto; position: relative; }
-.sec__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; margin-bottom: clamp(48px, 7vw, 88px); max-width: 860px; }
+.sec__head { display: grid; grid-template-columns: minmax(0, 1fr); gap: min(18px, 2.4vh); margin-bottom: clamp(32px, min(7vw, 9vh), 88px); max-width: 860px; }
 .sec__kicker { display: flex; align-items: center; gap: 12px; font-family: var(--serif); font-style: italic; font-size: var(--t-lg); color: var(--gold); font-variation-settings: 'opsz' 24, 'SOFT' 100; }
 .sec__kicker svg { width: 12px; height: 12px; }
-.sec__title { font-size: var(--t-4xl); font-weight: 320; letter-spacing: -.01em; line-height: 1; }
+.sec__title { font-size: clamp(2.625rem, min(1.458rem + 5.185vw, 12.4vh), 6.125rem); font-weight: 320; letter-spacing: -.01em; line-height: 1; }
 .sec__lede { font-size: clamp(1.05rem, .95rem + .4vw, 1.25rem); color: var(--ivory-2); max-width: 54ch; margin: 6px 0 0; line-height: 1.55; }
 
 /* brush divider drawn between groups */
@@ -382,7 +389,7 @@ p.about__closing {
 .glance dl { margin: 0; display: grid; gap: 16px; }
 .glance dt { font-size: var(--t-2xs); font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--ivory-3); }
 .glance dd { margin: 5px 0 0; font-family: var(--serif); font-size: var(--t-md); line-height: 1.38; color: var(--ivory); font-variation-settings: 'opsz' 24, 'SOFT' 100; }
-.glance .zh { font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun', serif; }
+.glance .zh { font-family: 'Noto Serif SC Sub', 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun', serif; }
 /* the résumé at the foot of At a Glance */
 .glance__cv {
   display: flex; align-items: center; gap: 14px; margin-top: 22px; padding: 12px 18px 12px 12px; border-radius: 999px;
@@ -526,10 +533,19 @@ p.about__closing {
 .legend .l-none { background: #1a2457; border: 1px solid rgba(243, 234, 219, .18); }
 .atlas__search { position: relative; }
 .atlas__search input {
+  -webkit-appearance: none; appearance: none;   /* Safari otherwise draws its own search field */
   width: min(260px, 70vw); padding: 9px 14px 9px 34px; border-radius: 999px; border: 1px solid var(--line-faint);
   background: rgba(5, 10, 46, .55); color: var(--ivory); font: inherit; font-size: var(--t-sm);
 }
 .atlas__search input::placeholder { color: var(--ivory-3); }
+/* the browser's own clear button and suggestion arrow differ by system (blue x on a Mac, grey x and a
+   drop-down arrow on Windows): one gold clear button everywhere, no arrow */
+.atlas__search input::-webkit-search-decoration, .atlas__search input::-webkit-calendar-picker-indicator { display: none !important; -webkit-appearance: none; }
+.atlas__search input::-webkit-search-cancel-button {
+  -webkit-appearance: none; width: 14px; height: 14px; margin-left: 6px; cursor: pointer; opacity: .75;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3 3l8 8M11 3l-8 8' stroke='%23f2c14e' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E") center / 14px no-repeat;
+}
+.atlas__search input::-webkit-search-cancel-button:hover { opacity: 1; }
 .atlas__search svg { position: absolute; left: 12px; top: 50%; width: 14px; height: 14px; margin-top: -7px; color: var(--ivory-3); }
 .map {
   position: relative; width: 100%; aspect-ratio: 1.9 / 1; min-height: 300px; border-radius: 4px; overflow: hidden;
@@ -959,7 +975,7 @@ p.about__closing {
 .langs { list-style: none; margin: 0; padding: 0; display: grid; gap: 18px; }
 .langs li { display: grid; grid-template-columns: calc(var(--t-2xl) * 3.9) minmax(0, 1fr); gap: 4px 18px; align-items: center; border-top: 1px solid var(--line-faint); padding-top: 16px; }
 .langs .native { font-family: var(--serif); font-size: var(--t-2xl); line-height: 1; font-variation-settings: 'opsz' 72, 'SOFT' 100; }
-.langs .native.zh { font-family: 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun', serif; font-weight: 400; }
+.langs .native.zh { font-family: 'Noto Serif SC Sub', 'Songti SC', 'STSong', 'Noto Serif CJK SC', 'Source Han Serif SC', 'SimSun', serif; font-weight: 400; }
 .langs__about { display: grid; gap: 2px; }
 .langs .en { color: var(--ivory-2); font-size: var(--t-sm); }
 .langs .level { font-family: var(--serif); font-style: italic; font-size: var(--t-md); color: var(--gold); font-variation-settings: 'opsz' 24, 'SOFT' 100; }
