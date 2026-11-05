@@ -27,7 +27,8 @@
 
   /* ---------- Featured projects: one big star per website ----------
      Each star has its own way of answering the pointer (`glyph`): the sun sends out rays, the ripple
-     spreads rings, the orbit sets a small moon circling. Selecting one flies through the star into its
+     spreads rings, the orbit sets a small moon circling, the flow runs two
+     electrolyte loops, the shot traces a ball's arc into a hoop. Selecting one flies through the star into its
      case study (a circle of the project's colour grows from the star, then the chapter opens). */
   function featuredStar(w, color) {
     var g = w.glyph || 'sun', id = 'fs-' + w.id;
@@ -49,6 +50,10 @@
       // a flow battery's two electrolyte loops: dashes running round either side of the cell
       fx.appendChild(s('path', { class: 'loop loop-a', d: 'M-5 -15 C-44 -34 -44 34 -5 15', stroke: '#b9a3f0' }));
       fx.appendChild(s('path', { class: 'loop loop-b', d: 'M5 -15 C44 -34 44 34 5 15', stroke: color }));
+    } else if (g === 'shot') {
+      // a jump shot: the ball's arc is traced from the left and drops through a hoop on the right
+      fx.appendChild(s('path', { class: 'arc', d: 'M-42 14 Q-4 -70 34 -3', stroke: color, pathLength: 100 }));
+      fx.appendChild(s('ellipse', { class: 'hoop', cx: 36, cy: 0, rx: 8, ry: 2.6, stroke: '#ff9a5a' }));
     } else {
       fx.appendChild(s('circle', { class: 'orbit', r: 30, stroke: color }));
       fx.appendChild(s('g', { class: 'moon-arm' }, s('circle', { class: 'moon', cx: 30, cy: 0, r: 3.2, fill: '#fff4d0' })));

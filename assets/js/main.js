@@ -323,16 +323,22 @@
         a.style.left = x + 'px'; a.style.top = y + 'px';
         a.style.width = a.style.height = (2 * r) + 'px';
         a.style.marginLeft = a.style.marginTop = (-r) + 'px';
-        a.hidden = hidden;
-        a._visible = !hidden;
+        a.hidden = false;   // shown while the label is measured
         // label below the star (above it near the bottom of the screen), kept inside the window
         var lab = a._label, below = y < hh * 0.62, off = Math.max(18, Math.min(56, halo * 0.6)) + 8;
         lab.classList.toggle('is-above', !below);
         lab.style.top = below ? (r + off) + 'px' : '';
         lab.style.bottom = below ? '' : (r + off) + 'px';
-        var lw = lab.offsetWidth || 160;
+        var lw = lab.offsetWidth || 160, lh = lab.offsetHeight || 24;
         var shift = Math.max(12 - (x - lw / 2), Math.min(0, (w - 12) - (x + lw / 2)));
         lab.style.setProperty('--shift', shift + 'px');
+        // the star may be clear of the text while its label is not (narrow phones): then the doorway stays hidden
+        var lt = below ? y + off : y - off - lh, ll = x - lw / 2 + shift;
+        hidden = hidden || rects.some(function (b) {
+          return b.right > b.left && ll < b.right + 6 && ll + lw > b.left - 6 && lt < b.bottom + scrollY + 6 && lt + lh > b.top + scrollY - 6;
+        });
+        a.hidden = hidden;
+        a._visible = !hidden;
       });
     },
     visibleStars: function () {

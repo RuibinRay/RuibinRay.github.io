@@ -28,7 +28,7 @@
  *   tags        other constellations the work belongs to as well, e.g. ['finance', 'analytics']
  *   cover       { src, w, h } — a screenshot of the site (assets/media/work/), used on the card and the case study
  *   glyph       how its star behaves when pointed at: 'sun' (rays), 'ripple' (rings), 'orbit' (a small moon),
- *               'flow' (two electrolyte loops)
+ *               'flow' (two electrolyte loops), 'shot' (a ball's arc into a hoop)
  *   alsoIn      list of { constellation, star } — also draw the project in another constellation, at that
  *               position, and list it there too (it keeps one case study and one number)
  */
@@ -181,6 +181,59 @@ SITE.work = [
       { title: 'VRFB and LCOS study guide (24 pages, bilingual)', kind: 'Guide', note: 'Written at HJAT — I can share it where the company allows' }
     ],
     related: ['j:hjat', 'c:CHN', 's:intl-bd', 's:communication', 'w:lifecycle', 'w:market-maps', 'w:study-guides', 'w:pura-vida']
+  },
+  {
+    id: 'courtvision-ai', short: 'CourtVision AI', constellation: 'digital', star: [0.46, 0.13], magnitude: 0.95,
+    alsoIn: [{ constellation: 'analytics', star: [0.46, 0.12] }],
+    featured: true, status: 'live', glyph: 'shot', tags: ['analytics'],
+    title: 'CourtVision AI — Beyond the Box Score',
+    tagline: 'An NBA analytics lab: team and player dashboards, real shot charts and validated machine-learning forecasts',
+    when: 'Nov 2026', org: 'Personal project',
+    cover: { src: 'assets/media/work/courtvision-ai/hero.webp', w: 2048, h: 1280 },
+    context: 'An interactive NBA analytics laboratory, built as a business analytics and data-science portfolio project: dashboards for all 30 teams, player profiles with real shot coordinates, a live game centre, a prediction lab, a data-science lab, league history since 1996-97 and an analytics academy. The homepage is a scroll-driven 3D arena where two players face off and their real shots drop onto the floor. Not affiliated with the NBA and not a betting product: forecasts are statistical estimates.',
+    objective: 'Go beyond the box score: show what drives NBA results with real data, and make every number traceable. Raw statistics, calculated metrics and model outputs are labelled as such, and anything the site cannot measure is marked unavailable rather than estimated.',
+    role: 'Designed and built the whole site: the data pipeline, the models and their validation, the dashboards, the 3D homepage and the lessons.',
+    approach: [
+      'Data: a Python pipeline pulls team, player, game, lineup and shot data from NBA Stats (through the open-source nba_api client), validates it and writes a dated snapshot that the site runs on; live scores come straight from ESPN’s public scoreboard, refreshed every 30 seconds during games and never mixed up with cached data',
+      'Prediction Lab: six models — Elo, logistic regression, ridge and lasso margin models, random forest and gradient boosting — and an ensemble weighted by each model’s past out-of-sample performance; a what-if simulator, Monte Carlo, sensitivity analysis and feature importance',
+      'Validation: walk-forward by season, so each season from 2019-20 on is predicted only by models trained on earlier seasons; log loss, Brier score, accuracy and calibration, all compared with simply picking the home team; automated tests guard against data leakage',
+      'Team and player analytics: a dashboard for every team (season, recent form, home and away, playoffs, rolling efficiency, five-man lineups, evidence-based strengths and weaknesses), player profiles with rolling trends and consistency, and D3 shot charts compared zone by zone with the league',
+      'Data Science Lab: ten modules, from shooting efficiency, possessions and the Four Factors to a ridge plus-minus demonstration, Kalman-filter player development, team similarity by PCA and player archetypes by k-means, with CSV export',
+      'Learn: an analytics academy with a 95-term dictionary, a full lesson for every statistic (formula, worked example, live calculator, real NBA example, exercise) and a five-level learning path with quizzes',
+      'The homepage: one scroll-driven camera move through a procedural Three.js arena, ending in an aerial view where every shot zone is tinted by the shooter’s field-goal percentage against the league'
+    ],
+    tools: ['JavaScript (ES modules)', 'Three.js', 'GSAP ScrollTrigger', 'Apache ECharts', 'D3', 'Python', 'pandas', 'scikit-learn', 'XGBoost', 'nba_api', 'FastAPI (optional backend)', 'pytest', 'GitHub Actions', 'GitHub Pages'],
+    insights: [],
+    results: [
+      'Live: 30 team dashboards, player profiles, a live game centre, the Prediction Lab, the Data Science Lab, league history and the academy',
+      'Tested walk-forward on 8,386 games from 2019-20 to 2026-27, the models call about 65% of games correctly, against 55% for always picking the home team (the site’s model page, November 2026 data)',
+      'Every model’s accuracy, calibration and limitations are published on the site'
+    ],
+    background: [
+      { text: 'Dean Oliver identified four factors behind winning basketball — shooting, turnovers, rebounding and free throws — and gave them approximate weights of 40%, 25%, 20% and 15%.',
+        sources: [{ label: 'Basketball Reference, Four Factors', url: 'https://www.basketball-reference.com/about/factors.html' }] },
+      { text: 'Elo ratings, first built for chess, were adapted to the NBA by FiveThirtyEight: ratings move after every game in proportion to the surprise and the margin, home court is worth a fixed number of rating points, and teams carry part of their rating into the next season.',
+        sources: [{ label: 'FiveThirtyEight, How We Calculate NBA Elo Ratings', url: 'https://fivethirtyeight.com/features/how-we-calculate-nba-elo-ratings/' }] }
+    ],
+    images: [
+      { src: 'assets/media/work/courtvision-ai/floor.webp', w: 2048, h: 1280, alt: 'An aerial view of the 3D court: two players’ real shots marked on each half, each zone tinted by field-goal percentage against the league, with the text “The floor becomes the chart”', caption: 'The homepage ends above the court: real shots, every zone measured against the league' },
+      { src: 'assets/media/work/courtvision-ai/forecast.webp', w: 2048, h: 1280, alt: 'A pre-game forecast: win probability for each team on a gauge, projected margin and score, uncertainty and model agreement, and each model’s probability side by side', caption: 'The Prediction Lab: six models, their agreement and the forecast’s uncertainty' },
+      { src: 'assets/media/work/courtvision-ai/shots.webp', w: 2048, h: 1280, alt: 'An interactive shot chart: every attempt plotted on a half court, with filters and a zone table comparing field-goal percentage with the league', caption: 'Player profiles: real shot coordinates, filtered and compared with the league zone by zone' },
+      { src: 'assets/media/work/courtvision-ai/models.webp', w: 2048, h: 1280, alt: 'The model documentation page: test games, test period and accuracy, and a table of each model’s log loss, Brier score and accuracy', caption: 'How the forecasts work: walk-forward results for every model against the home-team baseline' },
+      { src: 'assets/media/work/courtvision-ai/datalab.webp', w: 2048, h: 1280, alt: 'The Data Science Lab: ten modules and a shooting-efficiency calculator with its formulas', caption: 'The Data Science Lab: ten modules, from shooting efficiency to player archetypes' },
+      { src: 'assets/media/work/courtvision-ai/learn.webp', w: 2048, h: 1280, alt: 'The academy’s home page, “From the box score to machine learning, one lesson at a time”, with a live true-shooting calculator', caption: 'Understand the Data: a lesson and a live calculator for every statistic' }
+    ],
+    links: [
+      { label: 'Open the site', url: 'https://ruibinray.github.io/Courtvision-AI/' },
+      { label: 'View the code', url: 'https://github.com/RuibinRay/Courtvision-AI' }
+    ],
+    documents: [
+      { title: 'How the forecasts work', kind: 'Models', url: 'https://ruibinray.github.io/Courtvision-AI/#/models', note: 'Data, leakage controls, each model, walk-forward accuracy and limitations' },
+      { title: 'Model documentation', kind: 'Docs', url: 'https://github.com/RuibinRay/Courtvision-AI/blob/main/docs/MODELS.md', note: 'Features, training and validation in detail' },
+      { title: 'Data sources and pipeline', kind: 'Docs', url: 'https://github.com/RuibinRay/Courtvision-AI/blob/main/docs/DATA.md', note: 'Where every number comes from' },
+      { title: 'Academy coverage report', kind: 'Report', url: 'https://github.com/RuibinRay/Courtvision-AI/blob/main/docs/ACADEMY_COVERAGE.md', note: 'Every statistic and its lesson' }
+    ],
+    related: ['s:analytics', 's:data-science', 's:ai', 'w:ml-cases', 'w:sunflower-intelligence']
   },
   {
     id: '545-days', short: '545 Days', constellation: 'digital', star: [0.82, 0.30], magnitude: 0.9,

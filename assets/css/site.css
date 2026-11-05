@@ -316,7 +316,9 @@ html.is-arriving main, html.is-arriving .footer, html.is-arriving .nav { transit
   .hero__intro { max-width: 30ch; }
   .hero__ctas { justify-content: flex-start; flex-direction: column; align-items: flex-start; gap: 4px; }
   .hero__featured { justify-content: flex-start; margin-top: 1rem; gap: 4px 14px; }
-  .hero__featured-label { width: 100%; }
+  /* the label shares its line with the first website, so five sites still take three short lines and leave
+     room above the text for the painting's doorway */
+  .hero__featured-label { margin-right: 2px; }
   .hero__cue { bottom: 20px; }
   .hero__cue span { display: none; }
   .hero__skip { bottom: 20px; }
@@ -641,6 +643,12 @@ p.about__closing {
 .feat-row { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(20px, 3vw, 40px); }
 /* four websites: two by two, so no card is left alone on a row */
 @media (min-width: 641px) { .feat-row:has(> li:nth-child(4):last-child) { grid-template-columns: repeat(2, minmax(0, 1fr)); row-gap: clamp(36px, 5vw, 64px); } }
+/* five: three across, then two wider cards, so the second row is not left with a gap */
+@media (min-width: 901px) {
+  .feat-row:has(> li:nth-child(5):last-child) { grid-template-columns: repeat(6, minmax(0, 1fr)); row-gap: clamp(36px, 5vw, 64px); }
+  .feat-row:has(> li:nth-child(5):last-child) > li { grid-column: span 2; }
+  .feat-row:has(> li:nth-child(5):last-child) > li:nth-child(n+4) { grid-column: span 3; }
+}
 .feat {
   --hue: var(--gold);
   position: relative; display: block; padding: 84px 0 0; text-decoration: none; color: inherit; outline: none; border-radius: 6px;
@@ -677,6 +685,12 @@ p.about__closing {
 .feat:hover .fstar--flow .loop, .feat:focus-visible .fstar--flow .loop { animation: fstarFlow 1.1s linear infinite; }
 .feat:hover .fstar--flow .loop-b, .feat:focus-visible .fstar--flow .loop-b { animation-direction: reverse; }
 @keyframes fstarFlow { to { stroke-dashoffset: -20; } }
+.fstar--shot .arc { fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-dasharray: 100; stroke-dashoffset: 100; }
+.fstar--shot .hoop { fill: none; stroke-width: 1.4; opacity: .55; transform-box: fill-box; transform-origin: center; }
+.feat:hover .fstar--shot .arc, .feat:focus-visible .fstar--shot .arc { animation: fstarShot 1.8s var(--ease-out) infinite; }
+.feat:hover .fstar--shot .hoop, .feat:focus-visible .fstar--shot .hoop { animation: fstarSwish 1.8s var(--ease) infinite; }
+@keyframes fstarShot { 0% { stroke-dashoffset: 100; opacity: 1; } 60% { stroke-dashoffset: 0; opacity: 1; } 85%, 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes fstarSwish { 0%, 55% { opacity: .55; transform: scale(1); } 66% { opacity: 1; transform: scale(1.35); } 100% { opacity: .55; transform: scale(1); } }
 .feat__cover {
   position: relative; display: block; aspect-ratio: 16 / 10; overflow: hidden; border-radius: 4px;
   border: 1px solid var(--line-faint); background: #06113f;
@@ -716,6 +730,10 @@ p.about__closing {
 @media (max-width: 900px) {
   .feat-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
+@media (min-width: 641px) and (max-width: 900px) {
+  /* two by two, and a fifth card centred on its own row at the same width */
+  .feat-row:has(> li:nth-child(5):last-child) > li:last-child { grid-column: 1 / -1; justify-self: center; width: calc(50% - clamp(10px, 1.5vw, 20px)); }
+}
 @media (max-width: 640px) {
   .feat-row { grid-template-columns: 1fr; gap: 44px; }
   .feat { padding-top: 72px; }
@@ -723,11 +741,12 @@ p.about__closing {
 }
 @media (prefers-reduced-motion: reduce) {
   .fstar__spark { animation: none; }
-  .feat:hover .fstar--sun .fstar__fx, .feat:hover .fstar--orbit .moon-arm, .feat:hover .fstar--ripple .ring, .feat:hover .fstar--flow .loop { animation: none; }
+  .feat:hover .fstar--sun .fstar__fx, .feat:hover .fstar--orbit .moon-arm, .feat:hover .fstar--ripple .ring, .feat:hover .fstar--flow .loop, .feat:hover .fstar--shot .arc, .feat:hover .fstar--shot .hoop { animation: none; }
+  .feat:hover .fstar--shot .arc { stroke-dashoffset: 0; }
   .feat:hover .fstar--ripple .ring { opacity: .6; transform: scale(2); }
   .feat:hover .fstar--orbit .moon-arm { transform: rotate(135deg); }
 }
-.is-paused .fstar__spark, .is-paused .fstar__fx, .is-paused .moon-arm, .is-paused .ring, .is-paused .loop { animation-play-state: paused; }
+.is-paused .fstar__spark, .is-paused .fstar__fx, .is-paused .moon-arm, .is-paused .ring, .is-paused .loop, .is-paused .arc, .is-paused .hoop { animation-play-state: paused; }
 
 .index { margin-top: clamp(56px, 8vw, 96px); }
 .index__head { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; border-bottom: 1px solid var(--line-faint); padding-bottom: 12px; }
