@@ -2,8 +2,6 @@
 
 The personal website of **Ruibin (Ray) Jin Yao**, built around a living Starry Night ocean painting.
 
-> **Moved (10 November 2026).** https://ruibinray.github.io now sends visitors to the new portfolio at https://ruibinray.github.io/Profile/ (the [`Profile`](https://github.com/RuibinRay/Profile) repository). `index.html` here is only that redirect; old links keep working because the part after `#` travels with the visitor. The rest of this repository is the first site, kept as it was: revert the redirect commit to bring it back. Its files (the résumé, images) are still served from their old addresses.
-
 **Live site:** https://ruibinray.github.io
 
 Plain HTML, CSS and JavaScript. No build step, no framework, no backend, no trackers. Everything you'll want to change lives in the `data/` folder.
